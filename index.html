@@ -299,8 +299,8 @@ async function loadSpreadsheet() {
 
   demons = json.table.rows.map(row => ({
     name: row.c[0]?.v || "",              // Name
-    difficulty: row.c[1]?.v || "",        // Official Difficulty
-    tier: Number(row.c[2]?.v) || 0         // Tier (ranking)
+    difficulty: row.c[3]?.v || "",        // Official Difficulty
+    tier: Number(row.c[5]?.v) || 0         // Tier (ranking)
   }));
 
   // ordenar por tier DESC (más tier = más arriba)
@@ -440,4 +440,5 @@ async function loadSpreadsheet() {
 </body>
 
 </html>
+
 

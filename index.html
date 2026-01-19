@@ -252,6 +252,7 @@
             <th>Puntos</th>
             <th>Rating</th>
             <th>Completado</th>
+            <th>Creador</th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -313,6 +314,7 @@
         name: r.c[1]?.v,
         difficulty: r.c[4]?.v,
         tier: Math.floor(Number(r.c[5]?.v) * 10) / 10
+        creator: r.c[2]?.v
       }))
       .filter(d => d.name && !isNaN(d.tier))
       .sort((a,b) => b.tier - a.tier);
@@ -387,6 +389,7 @@
       <td>${item.name}</td>
       <td class="points">${item.tier*10}</td>
       <td class="rating ${getRatingClass(item.difficulty)}">${item.difficulty}</td>
+      <td>${item.creator || "—"}</td>
       <td>
         ${players.map(p => `
           <span style="margin-right:10px;color:${item[p] ? 'var(--green)' : '#555'}">
@@ -437,13 +440,15 @@
       const div = document.createElement("div");
       div.className = "player-demon";
       div.innerHTML = `
+        <div class="player-demon">
         <div>
           <span class="tier ${getTierClass(d.tier)}">${d.tier.toFixed(1)}</span>
           <span>${d.name}</span>
-          <span class="rating ${getRatingClass(d.difficulty)}">${d.difficulty}</span>
           <span class="points">+${calcScore(d.tier)} pts</span>
+          <span style="margin-left:10px;color:var(--sub)">by ${d.creator || "—"}</span>
         </div>
         <button class="remove-btn">Quitar</button>
+        </div>
       `;
 
       div.querySelector(".remove-btn").onclick = () =>
@@ -471,25 +476,87 @@
     }
   }
 
-  submitBtn.addEventListener("click", async ()=>{
-    if(!selectedDemon) return alert("Seleccioná un demon de la lista");
-    const player = playerSelect.value;
+  submitBtn.addEventListener("click", async () => {
+  if (!selectedDemon) return alert("Seleccioná un demon de la lista");
 
-    await db.ref("pasados").push({
-      tier: selectedDemon.tier,
-      name: selectedDemon.name,
-      difficulty: selectedDemon.difficulty,
-      thiaguinhio: player==="thiaguinhio",
-      michaeelp: player==="michaeelp",
-      nzrv: player==="nzrv"
-    });
+  const player = playerSelect.value;
 
-    demonInput.value="";
-    selectedDemon=null;
-  });
+  // ID único por demonio (puede ser el nombre)
+  const demonKey = selectedDemon.name.replace(/\s+/g, "_").toLowerCase();
+
+  // verificar si ya está pasado por el jugador
+  const snap = await db.ref("pasados/" + demonKey).get();
+  const existing = snap.val();
+
+  if (existing && existing[player]) {
+    return alert("Ya pasaste ese nivel");
+  }
+
+  // si existe, lo actualizamos, si no, lo creamos
+  const newData = {
+    tier: selectedDemon.tier,
+    name: selectedDemon.name,
+    creator: selectedDemon.creator,
+    difficulty: selectedDemon.difficulty,
+    thiaguinhio: existing?.thiaguinhio || false,
+    michaeelp: existing?.michaeelp || false,
+    nzrv: existing?.nzrv || false,
+  };
+
+  newData[player] = true;
+
+  await db.ref("pasados/" + demonKey).set(newData);
+
+  demonInput.value = "";
+  selectedDemon = null;
+});
+
+  async function autoCleanDuplicates() {
+  const snap = await db.ref("pasados").get();
+  const data = snap.val();
+
+  if (!data) return;
+
+  const keys = Object.keys(data);
+  if (keys.length <= 1) return; // si hay 1 o 0 demonios, no hace nada
+
+  const merged = {};
+
+  for (const [key, item] of Object.entries(data)) {
+    const demonKey = item.name.replace(/\s+/g, "_").toLowerCase();
+
+    if (!merged[demonKey]) {
+      merged[demonKey] = {
+        tier: item.tier,
+        name: item.name,
+        creator: item.creator || "",
+        difficulty: item.difficulty || "",
+        thiaguinhio: false,
+        michaeelp: false,
+        nzrv: false
+      };
+    }
+
+    merged[demonKey].thiaguinhio = merged[demonKey].thiaguinhio || !!item.thiaguinhio;
+    merged[demonKey].michaeelp = merged[demonKey].michaeelp || !!item.michaeelp;
+    merged[demonKey].nzrv = merged[demonKey].nzrv || !!item.nzrv;
+  }
+
+  // si ya está limpio, no hace nada
+  const mergedCount = Object.keys(merged).length;
+  if (mergedCount === keys.length) return;
+
+  // borra todo y reescribe limpio
+  await db.ref("pasados").remove();
+  await db.ref("pasados").set(merged);
+
+  console.log("Duplicados limpiados automáticamente:", keys.length, "→", mergedCount);
+}
 
   loadSpreadsheet();
+  autoCleanDuplicates().then(() => listenDB());
   listenDB();
 </script>
 </body>
 </html>
+

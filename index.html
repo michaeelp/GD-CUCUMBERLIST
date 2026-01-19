@@ -313,7 +313,7 @@
       .map(r => ({
         name: r.c[1]?.v,
         difficulty: r.c[4]?.v,
-        tier: Math.floor(Number(r.c[5]?.v) * 10) / 10
+        tier: Math.floor(Number(r.c[5]?.v) * 10) / 10,
         creator: r.c[2]?.v
       }))
       .filter(d => d.name && !isNaN(d.tier))
@@ -559,4 +559,5 @@
 </script>
 </body>
 </html>
+
 

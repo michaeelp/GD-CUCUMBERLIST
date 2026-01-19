@@ -320,6 +320,29 @@
       .sort((a,b) => b.tier - a.tier);
   }
 
+  async function backfillCreators() {
+    const snap = await db.ref("pasados").get();
+    const data = snap.val();
+    if (!data) return;
+  
+    const updates = {};
+  
+    for (const [key, item] of Object.entries(data)) {
+      if (!item.creator || item.creator === "") {
+        const match = demons.find(d => d.name.toLowerCase() === item.name.toLowerCase());
+        if (match?.creator) {
+          updates[key + "/creator"] = match.creator;
+        }
+      }
+    }
+  
+    if (Object.keys(updates).length > 0) {
+      await db.ref("pasados").update(updates);
+      console.log("Creators rellenados:", Object.keys(updates).length);
+    }
+  }
+
+
   demonInput.addEventListener("input", () => {
     const q = demonInput.value.toLowerCase();
     searchResults.innerHTML = "";
@@ -557,7 +580,9 @@
 
   loadSpreadsheet()
     .then(() => autoCleanDuplicates())
+    .then(() => backfillCreators())
     .then(() => listenDB());
 </script>
 </body>
 </html>
+

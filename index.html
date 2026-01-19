@@ -385,18 +385,18 @@
     arr.forEach(item => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-      <td class="tier ${getTierClass(item.tier)}">${item.tier.toFixed(1)}</td>
-      <td>${item.name}</td>
-      <td class="points">${item.tier*10}</td>
-      <td class="rating ${getRatingClass(item.difficulty)}">${item.difficulty}</td>
-      <td>${item.creator || "—"}</td>
-      <td>
-        ${players.map(p => `
-          <span style="margin-right:10px;color:${item[p] ? 'var(--green)' : '#555'}">
-            ${item[p] ? '✓' : '○'} ${p}
-          </span>
-        `).join("")}
-      </td>
+        <td class="tier ${getTierClass(item.tier)}">${item.tier.toFixed(1)}</td>
+        <td>${item.name}</td>
+        <td class="points">${item.tier*10}</td>
+        <td class="rating ${getRatingClass(item.difficulty)}">${item.difficulty}</td>
+        <td>
+          ${players.map(p => `
+            <span style="margin-right:10px;color:${item[p] ? 'var(--green)' : '#555'}">
+              ${item[p] ? '✓' : '○'} ${p}
+            </span>
+          `).join("")}
+        </td>
+        <td>${item.creator || "—"}</td>
       `;
       tableBody.appendChild(tr);
     });
@@ -429,33 +429,37 @@
     const container = document.getElementById("playerDetails");
     const title = document.getElementById("playerDetailsTitle");
     const list = document.getElementById("playerDetailsList");
-
+  
     title.innerText = `Demons pasados por ${player}`;
     list.innerHTML = "";
     container.style.display = "block";
-
-    Object.entries(currentData).forEach(([key, d])=>{
-      if(!d[player]) return;
-
+  
+    // ordenar por tier descendente
+    const demons = Object.entries(currentData)
+      .filter(([key, d]) => d[player])
+      .sort((a,b) => b[1].tier - a[1].tier);
+  
+    demons.forEach(([key, d]) => {
       const div = document.createElement("div");
       div.className = "player-demon";
       div.innerHTML = `
-        <div class="player-demon">
         <div>
           <span class="tier ${getTierClass(d.tier)}">${d.tier.toFixed(1)}</span>
           <span>${d.name}</span>
-          <span class="points">+${calcScore(d.tier)} pts</span>
+          <span class="rating ${getRatingClass(d.difficulty)}">${d.difficulty}</span>
           <span style="margin-left:10px;color:var(--sub)">by ${d.creator || "—"}</span>
+          <span class="points" style="margin-left:10px">+${calcScore(d.tier)} pts</span>
         </div>
         <button class="remove-btn">Quitar</button>
-        </div>
       `;
-
+  
       div.querySelector(".remove-btn").onclick = () =>
         removeDemonFromPlayer(key, d, player);
-
+  
       list.appendChild(div);
     });
+  }
+
   }
 
   function showPlayerDetails(player){
@@ -559,5 +563,6 @@
 </script>
 </body>
 </html>
+
 
 

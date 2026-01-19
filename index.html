@@ -224,7 +224,7 @@
       <table>
         <thead>
           <tr>
-            <th>#</th>
+            <th>Tier</th>
             <th>Demon</th>
             <th>thiaguinhio</th>
             <th>michaeelp</th>
@@ -288,17 +288,30 @@
   const players = ["thiaguinhio", "michaeelp", "nzrv"];
   let demons = [];
 
-  // ====== TRAER DEMONS DE POINTERCRATE ======
-  async function loadPointercrate() {
-    const res = await fetch("https://pointercrate.com/api/v2/demons/listed/");
-    demons = await res.json();
+  // ====== TRAER DEMONS DESDE GOOGLE SHEETS ======
+async function loadSpreadsheet() {
+  const url = "https://docs.google.com/spreadsheets/d/1xaMERl70vzr8q9MqElr4YethnV15EOe8oL1UV9LLljc/gviz/tq?tqx=out:json";
+  const res = await fetch(url);
+  const text = await res.text();
 
-    demonList.innerHTML = "";
-    demons.forEach(d => {
-      const opt = document.createElement("option");
-      opt.value = `${d.position} — ${d.name}`;
-      demonList.appendChild(opt);
-    });
+  // google devuelve basura antes del JSON, hay que limpiarlo
+  const json = JSON.parse(text.substring(47).slice(0, -2));
+
+  demons = json.table.rows.map(row => ({
+    name: row.c[0]?.v || "",              // Name
+    difficulty: row.c[1]?.v || "",        // Official Difficulty
+    tier: Number(row.c[2]?.v) || 0         // Tier (ranking)
+  }));
+
+  // ordenar por tier DESC (más tier = más arriba)
+  demons.sort((a, b) => b.tier - a.tier);
+
+  demonList.innerHTML = "";
+  demons.forEach(d => {
+    const opt = document.createElement("option");
+    opt.value = `${d.tier} — ${d.name}`;
+    demonList.appendChild(opt);
+  });
   }
 
   // ====== ESCUCHAR DB EN TIEMPO REAL ======
@@ -315,7 +328,7 @@
     const arr = Object.values(data);
 
     // ordenar por posición
-    arr.sort((a,b) => a.position - b.position);
+    arr.sort((a, b) => b.tier - a.tier);
 
     tableBody.innerHTML = "";
 
@@ -323,7 +336,7 @@
       const row = document.createElement("tr");
 
       row.innerHTML = `
-        <td>${item.position}</td>
+        <td>${item.tier}</td>
         <td>${item.name}</td>
         <td>${item.thiaguinhio ? "✓" : ""}</td>
         <td>${item.michaeelp ? "✓" : ""}</td>
@@ -335,9 +348,10 @@
   }
 
   // ====== PUNTOS ======
-  function calcScore(position) {
-    return 151 - position; // 1 = 150pts, 150 = 1pt
+  function calcScore(tier) {
+  return tier * 10;
   }
+
 
   function renderScores(data) {
     const arr = Object.values(data);
@@ -345,7 +359,7 @@
 
     arr.forEach(d => {
       players.forEach(p => {
-        if (d[p]) scoreObj[p] += calcScore(d.position);
+        if (d[p]) scoreObj[p] += calcScore(d.tier);
       });
     });
 
@@ -388,7 +402,7 @@
     const demonText = demonInput.value;
 
     // validar demon
-    const found = demons.find(d => `${d.position} — ${d.name}` === demonText);
+    const found = demons.find(d => `${d.tier} — ${d.name}` === demonText);
     if (!found) {
       alert("Tenés que elegir un demon real de la lista (no podés escribir lo que quieras).");
       return;
@@ -407,8 +421,9 @@
     } else {
       // crear nuevo demon
       await db.ref("pasados").push({
-        position: found.position,
+        tier: found.tier,
         name: found.name,
+        difficulty: found.difficulty,
         thiaguinhio: player === "thiaguinhio",
         michaeelp: player === "michaeelp",
         nzrv: player === "nzrv"

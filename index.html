@@ -290,29 +290,55 @@
 
   // ====== TRAER DEMONS DESDE GOOGLE SHEETS ======
 async function loadSpreadsheet() {
-  const url = "https://docs.google.com/spreadsheets/d/1xaMERl70vzr8q9MqElr4YethnV15EOe8oL1UV9LLljc/gviz/tq?tqx=out:json&gid=1142185972";
+  // usá el ID de tu sheet + el gid si querés otra hoja
+  const url =
+    "https://docs.google.com/spreadsheets/d/1qKlWKpDkOpU1ZF6V6xGfutDY2NvcA8MNPnsv6GBkKPQ/gviz/tq?tqx=out:json&gid=0";
+
   const res = await fetch(url);
   const text = await res.text();
 
-  // google devuelve basura antes del JSON, hay que limpiarlo
-  const json = JSON.parse(text.substring(47).slice(0, -2));
+  // extraer el JSON real
+  const jsonText = text.match(
+    /google\.visualization\.Query\.setResponse\((.*)\);/s
+  )[1];
+  const json = JSON.parse(jsonText);
 
-  demons = json.table.rows.map(row => ({
-    name: row.c[0]?.v || "",              // Name
-    difficulty: row.c[3]?.v || "",        // Official Difficulty
-    tier: Number(row.c[5]?.v) || 0         // Tier (ranking)
-  }));
+  demons = json.table.rows
+    .map(r => ({
+      name: r.c[1]?.v?.trim(),        // B → Nombre
+      difficulty: r.c[4]?.v,          // E → Difficulty
+      tier: r.c[5]?.v                 // F → Tier (num largo)
+    }))
+    .filter(d =>
+      d.name &&
+      d.tier !== null &&
+      d.tier !== undefined &&
+      !isNaN(Number(d.tier))
+    )
+    .map(d => {
+      const rawTier = Number(d.tier);
 
-  // ordenar por tier DESC (más tier = más arriba)
+      // ⚠️ primer decimal nomás
+      const tierOneDecimal = Math.floor(rawTier * 10) / 10;
+
+      return {
+        ...d,
+        tier: tierOneDecimal
+      };
+    });
+
+  // ordenar por tier descendente (incluyendo decimales)
   demons.sort((a, b) => b.tier - a.tier);
 
   demonList.innerHTML = "";
   demons.forEach(d => {
     const opt = document.createElement("option");
-    opt.value = `${d.tier} — ${d.name}`;
+    opt.value = `${d.tier.toFixed(1)} — ${d.name}`;
     demonList.appendChild(opt);
   });
-  }
+
+  console.log("Demons cargados:", demons.length, demons);
+}
 
   // ====== ESCUCHAR DB EN TIEMPO REAL ======
   function listenDB() {
@@ -440,5 +466,6 @@ async function loadSpreadsheet() {
 </body>
 
 </html>
+
 
 

@@ -202,6 +202,21 @@
   @media (max-width: 900px){
     .grid{ grid-template-columns:1fr; }
   }
+
+  .rating-extreme{ color:#ff3b3b; font-weight:700; }
+  .rating-insane{ color:#ff7b00; font-weight:700; }
+  .rating-hard{ color:#ffb703; font-weight:700; }
+  .rating-medium{ color:#4fd1ff; font-weight:700; }
+  .rating-easy{ color:#3cff8f; font-weight:700; }
+
+  .tier-35{ color:#ff3b3b; }
+  .tier-30{ color:#ff7b00; }
+  .tier-25{ color:#ffd400; }
+  .tier-20{ color:#3cff8f; }
+  .tier-15{ color:#4fd1ff; }
+  .tier-10{ color:#6b8cff; }
+  .tier-5{ color:#9ca3af; }
+  .tier-0{ color:#6b7280; }
 </style>
 </head>
 
@@ -332,6 +347,28 @@
     });
   }
 
+  function getTierClass(tier){
+    if(tier >= 35) return "tier-35";
+    if(tier >= 30) return "tier-30";
+    if(tier >= 25) return "tier-25";
+    if(tier >= 20) return "tier-20";
+    if(tier >= 15) return "tier-15";
+    if(tier >= 10) return "tier-10";
+    if(tier >= 5) return "tier-5";
+    return "tier-0";
+  }
+
+  function getRatingClass(rating){
+    if(!rating) return "";
+    rating = rating.toLowerCase();
+    if(rating.includes("extreme")) return "rating-extreme";
+    if(rating.includes("insane")) return "rating-insane";
+    if(rating.includes("hard")) return "rating-hard";
+    if(rating.includes("medium")) return "rating-medium";
+    if(rating.includes("easy")) return "rating-easy";
+    return "";
+  }
+
   function renderTable(data) {
     const arr = Object.values(data).sort((a,b)=>b.tier-a.tier);
     tableBody.innerHTML = "";
@@ -339,10 +376,10 @@
     arr.forEach(item => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-      <td class="tier">${item.tier.toFixed(1)}</td>
+      <td class="tier ${getTierClass(item.tier)}">${item.tier.toFixed(1)}</td>
       <td>${item.name}</td>
       <td class="points">${item.tier*10}</td>
-      <td class="rating">${item.difficulty}</td>
+      <td class="rating ${getRatingClass(item.difficulty)}">${item.difficulty}</td>
       <td>
         ${players.map(p => `
           <span style="margin-right:10px;color:${item[p] ? 'var(--green)' : '#555'}">
@@ -387,7 +424,8 @@
   list.innerHTML = "";
   container.style.display = "block";
 
-  db.ref("pasados").once("value").then(snap=>{
+  db.ref("pasados").off();
+  db.ref("pasados").on("value", snap=>{
     const data = snap.val() || {};
 
     Object.entries(data).forEach(([key, d])=>{

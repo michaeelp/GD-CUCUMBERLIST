@@ -276,7 +276,7 @@
 
 <script>
   const firebaseConfig = { 
-    apiKey: "AIzaSyBfw2hIsXKxU3z7d11pa2uPVFPfRQcyQe4", 
+    apiKey: "AIzaSyBfw2hIsXKxU3z7d11pa2uPVFPfRQcyQ4", 
     authDomain: "gd-cucumberlist.firebaseapp.com", 
     databaseURL: "https://gd-cucumberlist-default-rtdb.firebaseio.com", 
     projectId: "gd-cucumberlist", 
@@ -332,7 +332,7 @@
     demons.filter(d => d.name.toLowerCase().includes(q)).forEach(d => {
       const div = document.createElement("div");
       div.className = "search-item";
-      div.innerText = `${d.tier.toFixed(1)} — ${d.name}`;
+      div.innerText = `${d.tier.toFixed(1)} — ${d.name} (by ${d.creator || "—"})`;
       div.onclick = () => {
         selectedDemon = d;
         demonInput.value = `${d.tier.toFixed(1)} — ${d.name}`;
@@ -412,16 +412,16 @@
 
     scoreList.innerHTML = "";
     players.sort((a,b)=>scoreObj[b]-scoreObj[a]).forEach(p=>{
-    const div = document.createElement("div");
-    div.className = "player-card";
-    div.innerHTML = `
-      <div class="name">${p}</div>
-      <div class="score">${scoreObj[p]} pts</div>
-    `;
+      const div = document.createElement("div");
+      div.className = "player-card";
+      div.innerHTML = `
+        <div class="name">${p}</div>
+        <div class="score">${scoreObj[p]} pts</div>
+      `;
 
-    div.onclick = () => showPlayerDetails(p);
+      div.onclick = () => showPlayerDetails(p);
 
-    scoreList.appendChild(div);
+      scoreList.appendChild(div);
     });
   }
 
@@ -434,7 +434,6 @@
     list.innerHTML = "";
     container.style.display = "block";
   
-    // ordenar por tier descendente
     const demons = Object.entries(currentData)
       .filter(([key, d]) => d[player])
       .sort((a,b) => b[1].tier - a[1].tier);
@@ -479,89 +478,86 @@
   }
 
   submitBtn.addEventListener("click", async () => {
-  if (!selectedDemon) return alert("Seleccioná un demon de la lista");
-
-  const player = playerSelect.value;
-
-  // ID único por demonio (puede ser el nombre)
-  const demonKey = selectedDemon.name.replace(/\s+/g, "_").toLowerCase();
-
-  // verificar si ya está pasado por el jugador
-  const snap = await db.ref("pasados/" + demonKey).get();
-  const existing = snap.val();
-
-  if (existing && existing[player]) {
-    return alert("Ya pasaste ese nivel");
-  }
-
-  // si existe, lo actualizamos, si no, lo creamos
-  const newData = {
-    tier: selectedDemon.tier,
-    name: selectedDemon.name,
-    creator: selectedDemon.creator,
-    difficulty: selectedDemon.difficulty,
-    thiaguinhio: existing?.thiaguinhio || false,
-    michaeelp: existing?.michaeelp || false,
-    nzrv: existing?.nzrv || false,
-  };
-
-  newData[player] = true;
-
-  await db.ref("pasados/" + demonKey).set(newData);
-
-  demonInput.value = "";
-  selectedDemon = null;
-});
+    if (!selectedDemon) return alert("Seleccioná un demon de la lista");
+  
+    const player = playerSelect.value;
+    const demonKey = selectedDemon.name.replace(/\s+/g, "_").toLowerCase();
+  
+    const snap = await db.ref("pasados/" + demonKey).get();
+    const existing = snap.val();
+  
+    if (existing && existing[player]) {
+      return alert("Ya pasaste ese nivel");
+    }
+  
+    const newData = {
+      tier: selectedDemon.tier,
+      name: selectedDemon.name,
+      creator: selectedDemon.creator || "",
+      difficulty: selectedDemon.difficulty || "",
+      thiaguinhio: existing?.thiaguinhio || false,
+      michaeelp: existing?.michaeelp || false,
+      nzrv: existing?.nzrv || false,
+    };
+  
+    newData[player] = true;
+  
+    await db.ref("pasados/" + demonKey).set(newData);
+  
+    demonInput.value = "";
+    selectedDemon = null;
+  });
 
   async function autoCleanDuplicates() {
-  const snap = await db.ref("pasados").get();
-  const data = snap.val();
+    const snap = await db.ref("pasados").get();
+    const data = snap.val();
 
-  if (!data) return;
+    if (!data) return;
 
-  const keys = Object.keys(data);
-  if (keys.length <= 1) return; // si hay 1 o 0 demonios, no hace nada
+    const keys = Object.keys(data);
+    if (keys.length <= 1) return;
 
-  const merged = {};
+    const merged = {};
 
-  for (const [key, item] of Object.entries(data)) {
-    const demonKey = item.name.replace(/\s+/g, "_").toLowerCase();
+    for (const [key, item] of Object.entries(data)) {
+      const demonKey = item.name.replace(/\s+/g, "_").toLowerCase();
 
-    if (!merged[demonKey]) {
-      merged[demonKey] = {
-        tier: item.tier,
-        name: item.name,
-        creator: item.creator || "",
-        difficulty: item.difficulty || "",
-        thiaguinhio: false,
-        michaeelp: false,
-        nzrv: false
-      };
+      if (!merged[demonKey]) {
+        merged[demonKey] = {
+          tier: item.tier,
+          name: item.name,
+          creator: item.creator || "",
+          difficulty: item.difficulty || "",
+          thiaguinhio: false,
+          michaeelp: false,
+          nzrv: false
+        };
+      } else {
+        if (!merged[demonKey].creator && item.creator) {
+          merged[demonKey].creator = item.creator;
+        }
+        if (!merged[demonKey].difficulty && item.difficulty) {
+          merged[demonKey].difficulty = item.difficulty;
+        }
+      }
+
+      merged[demonKey].thiaguinhio = merged[demonKey].thiaguinhio || !!item.thiaguinhio;
+      merged[demonKey].michaeelp = merged[demonKey].michaeelp || !!item.michaeelp;
+      merged[demonKey].nzrv = merged[demonKey].nzrv || !!item.nzrv;
     }
 
-    merged[demonKey].thiaguinhio = merged[demonKey].thiaguinhio || !!item.thiaguinhio;
-    merged[demonKey].michaeelp = merged[demonKey].michaeelp || !!item.michaeelp;
-    merged[demonKey].nzrv = merged[demonKey].nzrv || !!item.nzrv;
+    const mergedCount = Object.keys(merged).length;
+    if (mergedCount === keys.length) return;
+
+    await db.ref("pasados").remove();
+    await db.ref("pasados").set(merged);
+
+    console.log("Duplicados limpiados automáticamente:", keys.length, "→", mergedCount);
   }
 
-  // si ya está limpio, no hace nada
-  const mergedCount = Object.keys(merged).length;
-  if (mergedCount === keys.length) return;
-
-  // borra todo y reescribe limpio
-  await db.ref("pasados").remove();
-  await db.ref("pasados").set(merged);
-
-  console.log("Duplicados limpiados automáticamente:", keys.length, "→", mergedCount);
-}
-
-  loadSpreadsheet();
-  autoCleanDuplicates().then(() => listenDB());
-  listenDB();
+  loadSpreadsheet()
+    .then(() => autoCleanDuplicates())
+    .then(() => listenDB());
 </script>
 </body>
 </html>
-
-
-
-

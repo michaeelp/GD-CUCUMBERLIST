@@ -352,17 +352,22 @@
       return;
     }
 
-    demons.filter(d => d.name.toLowerCase().includes(q)).forEach(d => {
-      const div = document.createElement("div");
-      div.className = "search-item";
-      div.innerText = `${d.tier.toFixed(1)} — ${d.name} (by ${d.creator || "—"})`;
-      div.onclick = () => {
-        selectedDemon = d;
-        demonInput.value = `${d.tier.toFixed(1)} — ${d.name}`;
-        searchResults.style.display = "none";
-      };
-      searchResults.appendChild(div);
-    });
+    demons
+      .filter(d =>
+        d.name.toLowerCase().includes(q) ||
+        (d.creator || "").toLowerCase().includes(q)
+      )
+      .forEach(d => {
+        const div = document.createElement("div");
+        div.className = "search-item";
+        div.innerText = `${d.tier.toFixed(1)} — ${d.name} (by ${d.creator || "—"})`;
+        div.onclick = () => {
+          selectedDemon = d;
+          demonInput.value = `${d.tier.toFixed(1)} — ${d.name}`;
+          searchResults.style.display = "none";
+        };
+        searchResults.appendChild(div);
+      });
 
     searchResults.style.display = "block";
   });
@@ -585,4 +590,5 @@
 </script>
 </body>
 </html>
+
 

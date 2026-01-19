@@ -109,6 +109,33 @@
     clip-path: polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
   }
 
+  .player-demon{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px;
+  border-bottom:1px solid var(--line);
+  font-size:14px;
+  }
+
+  .player-demon span{
+    margin-right:10px;
+  }
+
+  .remove-btn{
+    background:transparent;
+    border:1px solid var(--line);
+    color:#ff6b6b;
+    padding:4px 8px;
+    cursor:pointer;
+    font-size:12px;
+  }
+
+  .remove-btn:hover{
+    background:rgba(255,0,0,0.1);
+  }
+
+
   /* custom search results */
   .search-results{
     position:absolute;
@@ -220,6 +247,10 @@
     <div class="card">
       <h2>Puntajes</h2>
       <div class="score-list" id="scoreList"></div>
+      <div id="playerDetails" style="margin-top:16px; display:none;">
+      <h3 id="playerDetailsTitle" style="margin-bottom:10px;"></h3>
+      <div id="playerDetailsList"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -334,11 +365,64 @@
 
     scoreList.innerHTML = "";
     players.sort((a,b)=>scoreObj[b]-scoreObj[a]).forEach(p=>{
-      const div = document.createElement("div");
-      div.className = "player-card";
-      div.innerHTML = `<div class="name">${p}</div><div class="score">${scoreObj[p]} pts</div>`;
-      scoreList.appendChild(div);
+    const div = document.createElement("div");
+    div.className = "player-card";
+    div.innerHTML = `
+      <div class="name">${p}</div>
+      <div class="score">${scoreObj[p]} pts</div>
+    `;
+
+    div.onclick = () => showPlayerDetails(p);
+
+    scoreList.appendChild(div);
     });
+  }
+
+  function showPlayerDetails(player){
+  const container = document.getElementById("playerDetails");
+  const title = document.getElementById("playerDetailsTitle");
+  const list = document.getElementById("playerDetailsList");
+
+  title.innerText = `Demons pasados por ${player}`;
+  list.innerHTML = "";
+  container.style.display = "block";
+
+  db.ref("pasados").once("value").then(snap=>{
+    const data = snap.val() || {};
+
+    Object.entries(data).forEach(([key, d])=>{
+      if(!d[player]) return;
+
+      const div = document.createElement("div");
+      div.className = "player-demon";
+      div.innerHTML = `
+        <div>
+          <span class="tier">${d.tier.toFixed(1)}</span>
+          <span>${d.name}</span>
+          <span class="rating">${d.difficulty}</span>
+          <span class="points">+${calcScore(d.tier)} pts</span>
+        </div>
+        <button class="remove-btn">Quitar</button>
+      `;
+
+      div.querySelector(".remove-btn").onclick = () =>
+        removeDemonFromPlayer(key, d, player);
+
+      list.appendChild(div);
+    });
+  });
+  }
+
+  function removeDemonFromPlayer(key, demon, player){
+  demon[player] = false;
+
+  const stillCompleted = players.some(p => demon[p]);
+
+  if(stillCompleted){
+    db.ref("pasados/" + key).set(demon);
+  } else {
+    db.ref("pasados/" + key).remove();
+  }
   }
 
   submitBtn.addEventListener("click", async ()=>{

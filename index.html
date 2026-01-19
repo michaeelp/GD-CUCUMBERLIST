@@ -284,6 +284,9 @@
     appId: "1:243319547284:web:d6100b0f2177b3ebab5b81" 
   };
 
+  let currentData = {};
+  let selectedPlayer = null;
+
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
@@ -341,9 +344,13 @@
 
   function listenDB() {
     db.ref("pasados").on("value", snap => {
-      const data = snap.val() || {};
-      renderTable(data);
-      renderScores(data);
+      currentData = snap.val() || {};
+      renderTable(currentData);
+      renderScores(currentData);
+
+      if(selectedPlayer){
+        renderPlayerDetails(selectedPlayer);
+      }
     });
   }
 
@@ -415,29 +422,25 @@
     });
   }
 
-  function showPlayerDetails(player){
-  const container = document.getElementById("playerDetails");
-  const title = document.getElementById("playerDetailsTitle");
-  const list = document.getElementById("playerDetailsList");
+  function renderPlayerDetails(player){
+    const container = document.getElementById("playerDetails");
+    const title = document.getElementById("playerDetailsTitle");
+    const list = document.getElementById("playerDetailsList");
 
-  title.innerText = `Demons pasados por ${player}`;
-  list.innerHTML = "";
-  container.style.display = "block";
+    title.innerText = `Demons pasados por ${player}`;
+    list.innerHTML = "";
+    container.style.display = "block";
 
-  db.ref("pasados").off();
-  db.ref("pasados").on("value", snap=>{
-    const data = snap.val() || {};
-
-    Object.entries(data).forEach(([key, d])=>{
+    Object.entries(currentData).forEach(([key, d])=>{
       if(!d[player]) return;
 
       const div = document.createElement("div");
       div.className = "player-demon";
       div.innerHTML = `
         <div>
-          <span class="tier">${d.tier.toFixed(1)}</span>
+          <span class="tier ${getTierClass(d.tier)}">${d.tier.toFixed(1)}</span>
           <span>${d.name}</span>
-          <span class="rating">${d.difficulty}</span>
+          <span class="rating ${getRatingClass(d.difficulty)}">${d.difficulty}</span>
           <span class="points">+${calcScore(d.tier)} pts</span>
         </div>
         <button class="remove-btn">Quitar</button>
@@ -448,19 +451,24 @@
 
       list.appendChild(div);
     });
-  });
+  }
+
+  function showPlayerDetails(player){
+    selectedPlayer = player;
+    renderPlayerDetails(player);
   }
 
   function removeDemonFromPlayer(key, demon, player){
-  demon[player] = false;
+    const updated = { ...demon };
+    updated[player] = false;
 
-  const stillCompleted = players.some(p => demon[p]);
+    const stillCompleted = players.some(p => updated[p]);
 
-  if(stillCompleted){
-    db.ref("pasados/" + key).set(demon);
-  } else {
-    db.ref("pasados/" + key).remove();
-  }
+    if(stillCompleted){
+      db.ref("pasados/" + key).set(updated);
+    } else {
+      db.ref("pasados/" + key).remove();
+    }
   }
 
   submitBtn.addEventListener("click", async ()=>{

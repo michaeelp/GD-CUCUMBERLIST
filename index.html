@@ -271,18 +271,19 @@
     </div>
 
     <!-- PUNTAJES -->
-    <div class="card">
-      <h2>Puntajes</h2>
-      <div class="score-list" id="scoreList"></div>
-      <div id="playerDetails" style="margin-top:16px; display:none;">
-      <h3 id="playerDetailsTitle" style="margin-bottom:10px;"></h3>
-      <div id="playerDetailsList"></div>
+    <div style="display:flex; flex-direction:column; gap:20px;">
+      <div class="card">
+        <h2>Historial</h2>
+        <div id="historyList"></div>
       </div>
-    </div>
-
-    <div class="card" style="margin-top:20px;">
-      <h2>Historial</h2>
-      <div id="historyList"></div>
+      <div class="card">
+        <h2>Puntajes</h2>
+        <div class="score-list" id="scoreList"></div>
+        <div id="playerDetails" style="margin-top:16px; display:none;">
+          <h3 id="playerDetailsTitle" style="margin-bottom:10px;"></h3>
+          <div id="playerDetailsList"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -551,6 +552,15 @@
     const updated = { ...demon };
     updated[player] = false;
   
+    const historyId = demon.history?.[player];
+  
+    if(updated.history){
+      delete updated.history[player];
+      if(Object.keys(updated.history).length === 0){
+        delete updated.history;
+      }
+    }
+  
     const stillCompleted = players.some(p => updated[p]);
   
     if(stillCompleted){
@@ -558,17 +568,10 @@
     } else {
       await db.ref("pasados/" + key).remove();
     }
-
-    const snap = await db.ref("historial")
-      .orderByChild("demonKey")
-      .equalTo(key)
-      .get();
   
-    snap.forEach(child => {
-      if(child.val().player === player){
-        child.ref.remove();
-      }
-    });
+    if(historyId){
+      await db.ref("historial/" + historyId).remove();
+    }
   }
 
   submitBtn.addEventListener("click", async () => {
@@ -595,10 +598,10 @@
     };
   
     newData[player] = true;
-  
-    await db.ref("pasados/" + demonKey).set(newData);
-
-    const historyEntry = {
+    
+    const historyRef = db.ref("historial").push();
+    
+    await historyRef.set({
       player: player,
       demonKey: demonKey,
       demon: selectedDemon.name,
@@ -606,11 +609,13 @@
       difficulty: selectedDemon.difficulty || "",
       creator: selectedDemon.creator || "",
       timestamp: Date.now()
-    };
+    });
     
-    await db.ref("historial").push(historyEntry);
-
-  
+    if(!newData.history) newData.history = {};
+    newData.history[player] = historyRef.key;
+    
+    await db.ref("pasados/" + demonKey).set(newData);
+    
     demonInput.value = "";
     selectedDemon = null;
   });
@@ -670,6 +675,7 @@
 </script>
 </body>
 </html>
+
 
 
 

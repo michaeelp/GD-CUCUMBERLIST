@@ -203,6 +203,17 @@
     .grid{ grid-template-columns:1fr; }
   }
 
+  .history-item{
+    padding:10px;
+    border-bottom:1px solid var(--line);
+    font-size:14px;
+  }
+  
+  .history-time{
+    color:var(--sub);
+    font-size:12px;
+  }
+
   .rating-extreme{ color:#ff3b3b; font-weight:700; }
   .rating-insane{ color:#ff7b00; font-weight:700; }
   .rating-hard{ color:#ffb703; font-weight:700; }
@@ -267,6 +278,11 @@
       <h3 id="playerDetailsTitle" style="margin-bottom:10px;"></h3>
       <div id="playerDetailsList"></div>
       </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h2>Historial</h2>
+      <div id="historyList"></div>
     </div>
   </div>
 </div>
@@ -432,6 +448,15 @@
 
   function calcScore(tier){ return tier*10; }
 
+  function timeAgo(ts){
+    const diff = Math.floor((Date.now() - ts) / 1000);
+  
+    if(diff < 60) return `hace ${diff}s`;
+    if(diff < 3600) return `hace ${Math.floor(diff/60)}m`;
+    if(diff < 86400) return `hace ${Math.floor(diff/3600)}h`;
+    return `hace ${Math.floor(diff/86400)}d`;
+  }
+
   function renderScores(data){
     const scoreObj = { thiaguinhio:0, michaeelp:0, nzrv:0 };
     Object.values(data).forEach(d=>{
@@ -451,6 +476,36 @@
 
       scoreList.appendChild(div);
     });
+  }
+
+  const historyList = document.getElementById("historyList");
+
+  function listenHistory(){
+    db.ref("historial")
+      .limitToLast(50)
+      .on("value", snap => {
+        const data = snap.val();
+        historyList.innerHTML = "";
+        if(!data) return;
+  
+        Object.values(data)
+          .sort((a,b)=>b.timestamp - a.timestamp)
+          .forEach(h => {
+            const div = document.createElement("div");
+            div.className = "history-item";
+            div.innerHTML = `
+              <div>
+                <b>${h.player}</b> se pasó
+                <span class="tier ${getTierClass(h.tier)}">${h.tier.toFixed(1)}</span>
+                <b>${h.demon}</b>
+                <span class="rating ${getRatingClass(h.difficulty)}">${h.difficulty}</span>
+                <span style="color:var(--sub)">by ${h.creator || "—"}</span>
+              </div>
+              <div class="history-time">${timeAgo(h.timestamp)}</div>
+            `;
+            historyList.appendChild(div);
+          });
+      });
   }
 
   function renderPlayerDetails(player){
@@ -492,17 +547,28 @@
     renderPlayerDetails(player);
   }
 
-  function removeDemonFromPlayer(key, demon, player){
+  async function removeDemonFromPlayer(key, demon, player){
     const updated = { ...demon };
     updated[player] = false;
-
+  
     const stillCompleted = players.some(p => updated[p]);
-
+  
     if(stillCompleted){
-      db.ref("pasados/" + key).set(updated);
+      await db.ref("pasados/" + key).set(updated);
     } else {
-      db.ref("pasados/" + key).remove();
+      await db.ref("pasados/" + key).remove();
     }
+
+    const snap = await db.ref("historial")
+      .orderByChild("demonKey")
+      .equalTo(key)
+      .get();
+  
+    snap.forEach(child => {
+      if(child.val().player === player){
+        child.ref.remove();
+      }
+    });
   }
 
   submitBtn.addEventListener("click", async () => {
@@ -531,6 +597,19 @@
     newData[player] = true;
   
     await db.ref("pasados/" + demonKey).set(newData);
+
+    const historyEntry = {
+      player: player,
+      demonKey: demonKey,
+      demon: selectedDemon.name,
+      tier: selectedDemon.tier,
+      difficulty: selectedDemon.difficulty || "",
+      creator: selectedDemon.creator || "",
+      timestamp: Date.now()
+    };
+    
+    await db.ref("historial").push(historyEntry);
+
   
     demonInput.value = "";
     selectedDemon = null;
@@ -586,9 +665,11 @@
   loadSpreadsheet()
     .then(() => autoCleanDuplicates())
     .then(() => backfillCreators())
-    .then(() => listenDB());
+    .then(() => listenDB())
+    .then(() => listenHistory());
 </script>
 </body>
 </html>
+
 
 

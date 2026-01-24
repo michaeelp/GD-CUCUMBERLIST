@@ -135,7 +135,6 @@
     background:rgba(255,0,0,0.1);
   }
 
-
   /* custom search results */
   .search-results{
     position:absolute;
@@ -214,6 +213,38 @@
     font-size:12px;
   }
 
+  #historyList{
+    max-height: 320px;
+    overflow-y: auto;
+    padding-right: 6px;
+  }
+  
+  #historyList::-webkit-scrollbar{
+    width: 8px;
+  }
+  
+  #historyList::-webkit-scrollbar-track{
+    background: #0b1022;
+    border-left: 1px solid var(--line);
+  }
+  
+  #historyList::-webkit-scrollbar-thumb{
+    background: linear-gradient(
+      180deg,
+      var(--yellow),
+      var(--cyan)
+    );
+    border-radius: 4px;
+  }
+  
+  #historyList::-webkit-scrollbar-thumb:hover{
+    background: linear-gradient(
+      180deg,
+      var(--cyan),
+      var(--green)
+    );
+  }
+  
   .rating-extreme{ color:#ff3b3b; font-weight:700; }
   .rating-insane{ color:#ff7b00; font-weight:700; }
   .rating-hard{ color:#ffb703; font-weight:700; }
@@ -258,6 +289,7 @@
       <table>
         <thead>
           <tr>
+            <th>Top</th>
             <th>Tier</th>
             <th>Demon</th>
             <th>Puntos</th>
@@ -426,10 +458,11 @@
   function renderTable(data) {
     const arr = Object.values(data).sort((a,b)=>b.tier-a.tier);
     tableBody.innerHTML = "";
-
-    arr.forEach(item => {
+  
+    arr.forEach((item, index) => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
+        <td><b>#${index + 1}</b></td>
         <td class="tier ${getTierClass(item.tier)}">${item.tier.toFixed(1)}</td>
         <td>${item.name}</td>
         <td class="points">${item.tier*10}</td>
@@ -675,6 +708,7 @@
 </script>
 </body>
 </html>
+
 
 
 

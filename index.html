@@ -614,6 +614,28 @@
     searchResults.style.display = "block";
   });
 
+  async function getUserIP(){
+    const res = await fetch("https://api.ipify.org?format=json");
+    const data = await res.json();
+    return data.ip;
+  }
+
+  async function handleChangelogByIP(changelog){
+    if(changelog.length === 0) return;
+  
+    const signature = getChangeSignature(changelog);
+    const ip = await getUserIP();
+  
+    const ref = db.ref("changelogSeen/" + ip.replace(/\./g, "_"));
+    const snap = await ref.get();
+    const lastSeenSignature = snap.val();
+  
+    if(lastSeenSignature !== signature){
+      showChangesModal(changelog);
+      await ref.set(signature);
+    }
+  }
+
   function listenDB() {
     db.ref("pasados").on("value", snap => {
       currentData = snap.val() || {};
@@ -979,17 +1001,8 @@
     .then(() => migrateToIdKeys())
     .then(() => syncWithSpreadsheet())
     .then(changelog => {
-      if (changelog.length > 0) {
-        const signature = getChangeSignature(changelog);
-        const lastSeen = localStorage.getItem("gd-last-changelog");
-  
-        if (lastSeen !== signature) {
-          showChangesModal(changelog);
-          localStorage.setItem("gd-last-changelog", signature);
-        }
-      }
-  
-      return changelog; // 🔑 no cortar la cadena
+      handleChangelogByIP(changelog);
+      return changelog;
     })
     .then(() => syncHistoryWithSpreadsheet())
     .then(() => backfillCreators())
@@ -998,5 +1011,6 @@
 </script>
 </body>
 </html>
+
 
 

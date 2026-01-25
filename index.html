@@ -360,15 +360,110 @@
 
     demons = json.table.rows
       .map(r => ({
+        id: String(r.c[0]?.v),
         name: r.c[1]?.v,
+        creator: r.c[2]?.v,
         difficulty: r.c[4]?.v,
         tier: Math.floor(Number(r.c[5]?.v) * 10) / 10,
-        creator: r.c[2]?.v
       }))
-      .filter(d => d.name && !isNaN(d.tier))
+      .filter(d => d.id && d.name && !isNaN(d.tier))
       .sort((a,b) => b.tier - a.tier);
   }
 
+  async function syncWithSpreadsheet() {
+    const snap = await db.ref("pasados").get();
+    const data = snap.val();
+    if (!data) return;
+  
+    const updates = {};
+    let updatedCount = 0;
+  
+    for (const [key, item] of Object.entries(data)) {
+      if (!item.id) continue;
+  
+      const sheet = demons.find(d => String(d.id) === String(item.id));
+      if (!sheet) continue; // level eliminado del sheet → no tocamos
+  
+      let changed = false;
+      const updated = { ...item };
+  
+      if (updated.tier !== sheet.tier) {
+        updated.tier = sheet.tier;
+        changed = true;
+      }
+  
+      if (updated.difficulty !== sheet.difficulty) {
+        updated.difficulty = sheet.difficulty || "";
+        changed = true;
+      }
+  
+      if (updated.name !== sheet.name) {
+        updated.name = sheet.name;
+        changed = true;
+      }
+  
+      if ((updated.creator || "") !== (sheet.creator || "")) {
+        updated.creator = sheet.creator || "";
+        changed = true;
+      }
+  
+      if (changed) {
+        updates[key] = updated;
+        updatedCount++;
+      }
+    }
+  
+    if (updatedCount > 0) {
+      await db.ref("pasados").update(updates);
+      console.log(`Sync spreadsheet → firebase: ${updatedCount} niveles`);
+    }
+  }
+
+  async function syncHistoryWithSpreadsheet() {
+    const snap = await db.ref("historial").get();
+    const data = snap.val();
+    if (!data) return;
+  
+    const updates = {};
+    let updated = 0;
+  
+    for (const [key, h] of Object.entries(data)) {
+      if (!h.demonKey) continue;
+  
+      const sheet = demons.find(d => String(d.id) === String(h.demonKey));
+      if (!sheet) continue;
+  
+      let changed = false;
+  
+      if (h.tier !== sheet.tier) {
+        updates[key + "/tier"] = sheet.tier;
+        changed = true;
+      }
+  
+      if (h.difficulty !== sheet.difficulty) {
+        updates[key + "/difficulty"] = sheet.difficulty || "";
+        changed = true;
+      }
+  
+      if (h.creator !== sheet.creator) {
+        updates[key + "/creator"] = sheet.creator || "";
+        changed = true;
+      }
+  
+      if (h.demon !== sheet.name) {
+        updates[key + "/demon"] = sheet.name;
+        changed = true;
+      }
+  
+      if (changed) updated++;
+    }
+  
+    if (updated > 0) {
+      await db.ref("historial").update(updates);
+      console.log(`Historial sincronizado: ${updated} entradas`);
+    }
+  }
+  
   async function backfillCreators() {
     const snap = await db.ref("pasados").get();
     const data = snap.val();
@@ -611,7 +706,7 @@
     if (!selectedDemon) return alert("Seleccioná un demon de la lista");
   
     const player = playerSelect.value;
-    const demonKey = selectedDemon.name.replace(/\s+/g, "_").toLowerCase();
+    const demonKey = selectedDemon.id;
   
     const snap = await db.ref("pasados/" + demonKey).get();
     const existing = snap.val();
@@ -621,6 +716,7 @@
     }
   
     const newData = {
+      id: selectedDemon.id,
       tier: selectedDemon.tier,
       name: selectedDemon.name,
       creator: selectedDemon.creator || "",
@@ -652,6 +748,55 @@
     demonInput.value = "";
     selectedDemon = null;
   });
+
+  function normalize(str){
+    return (str || "")
+      .toString()
+      .trim()
+      .toLowerCase();
+  }
+  
+  function tierMatch(a, b){
+    return Math.abs(Number(a) - Number(b)) < 0.05;
+  }
+  
+  async function migrateToIdKeys() {
+    const snap = await db.ref("pasados").get();
+    const data = snap.val();
+    if (!data) return;
+  
+    const updates = {};
+    let migrated = 0;
+  
+    for (const [oldKey, item] of Object.entries(data)) {
+      if (item.id) continue; // ya migrado
+  
+      const match = demons.find(d =>
+        normalize(d.name) === normalize(item.name) &&
+        normalize(d.creator) === normalize(item.creator) &&
+        tierMatch(d.tier, item.tier)
+      );
+  
+      if (!match) continue;
+  
+      const newKey = match.id;
+  
+      updates[newKey] = {
+        ...item,
+        id: match.id,
+        name: match.name,
+        creator: match.creator || item.creator || ""
+      };
+  
+      updates[oldKey] = null;
+      migrated++;
+    }
+  
+    if (migrated > 0) {
+      await db.ref("pasados").update(updates);
+      console.log(`Migración completada: ${migrated} niveles`);
+    }
+  }
 
   async function autoCleanDuplicates() {
     const snap = await db.ref("pasados").get();
@@ -701,10 +846,13 @@
   }
 
   loadSpreadsheet()
-    .then(() => autoCleanDuplicates())
+    .then(() => migrateToIdKeys())
+    .then(() => syncWithSpreadsheet())
+    .then(() => syncHistoryWithSpreadsheet())
     .then(() => backfillCreators())
     .then(() => listenDB())
     .then(() => listenHistory());
 </script>
 </body>
 </html>
+

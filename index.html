@@ -369,6 +369,49 @@
       .sort((a,b) => b.tier - a.tier);
   }
 
+  async function syncWithSpreadsheet(){
+    const snap = await db.ref("pasados").get();
+    const data = snap.val();
+    if(!data) return;
+  
+    const updates = {};
+  
+    for(const [key, item] of Object.entries(data)){
+      const match = demons.find(
+        d => d.name.toLowerCase() === item.name.toLowerCase()
+      );
+  
+      if(!match) continue;
+  
+      let changed = false;
+      const updated = { ...item };
+  
+      if(item.tier !== match.tier){
+        updated.tier = match.tier;
+        changed = true;
+      }
+  
+      if(item.difficulty !== match.difficulty){
+        updated.difficulty = match.difficulty || "";
+        changed = true;
+      }
+  
+      if(item.creator !== match.creator){
+        updated.creator = match.creator || "";
+        changed = true;
+      }
+  
+      if(changed){
+        updates[key] = updated;
+      }
+    }
+  
+    if(Object.keys(updates).length > 0){
+      await db.ref("pasados").update(updates);
+      console.log("Firebase sincronizado con el spreadsheet");
+    }
+  }
+
   async function backfillCreators() {
     const snap = await db.ref("pasados").get();
     const data = snap.val();
@@ -701,13 +744,17 @@
   }
 
   loadSpreadsheet()
-    .then(() => autoCleanDuplicates())
-    .then(() => backfillCreators())
-    .then(() => listenDB())
-    .then(() => listenHistory());
+    .then(syncWithSpreadsheet)
+    .then(autoCleanDuplicates)
+    .then(backfillCreators)
+    .then(() => {
+      listenDB();
+      listenHistory();
+    });
 </script>
 </body>
 </html>
+
 
 
 

@@ -41,6 +41,21 @@ La web ya apunta a tu Firebase original. **La publicación en Pages no configura
 
 Si ya hiciste esos pasos, no hay que repetirlos. Añadí `TU_USUARIO.github.io` a los dominios autorizados de Authentication, sin la ruta del repositorio, si Firebase lo requiere. No guardes la contraseña en GitHub.
 
+## Desafíos y próximo hardest
+
+La sección **Desafíos** incluye un diario por jugador, un semanal compartido y el objetivo actual de cada uno. El inicio muestra accesos rápidos y cada perfil muestra su nivel en progreso.
+
+- **Diario:** toma como referencia el hardest registrado de ese jugador y apunta al 90 % de su tier, sin superarlo. Busca niveles pendientes en torno al 80–98 % del hardest. Si falta un candidato en ese tramo, utiliza uno disponible más bajo. Evita repetir los últimos siete diarios y el semanal cuando hay alternativas.
+- **Semanal:** toma la media de los tiers de los tres hardests. Busca un nivel pendiente para los tres cerca de esa media (88–112 %; con los datos incluidos, la referencia es 17,2). Evita repetir los últimos cuatro semanales si hay alternativas. Requiere un hardest registrado para cada jugador.
+- **Renovación:** el diario cambia a las 00:00 de Uruguay y el semanal los lunes a esa hora. El primer editor que abra la web con el catálogo cargado guarda los desafíos del período automáticamente. Hasta ese momento aparecen como **Por fijar**. Una vez guardados, los niveles y sus tiers de referencia quedan fijos durante el período.
+- **Objetivo actual:** un editor elige un nivel pendiente del catálogo por nombre o ID y guarda el mejor porcentaje entero entre 0 y 100. Todos pueden verlo. El mismo nivel conserva su mejor marca; al cambiar de nivel, el avance empieza de nuevo. Si supera el tier del hardest actual, aparece como **Próximo hardest**; si no, como **En juego**.
+- **100 %:** guarda objetivo, completación, fecha y puntos en una operación atómica. Si la completación ya está registrada, no la duplica. También podés seguir usando «Registrar demon»; el objetivo reflejará esa completación.
+- **Victoria en un desafío:** requiere una completación registrada con fecha dentro del día o la semana correspondiente. Los registros antiguos sin fecha no se convierten en victorias del desafío. Los desafíos no añaden puntos extra al ranking.
+
+**Si venís de una versión anterior:** publicá el archivo `firebase.rules.json` actualizado en **Firebase Console → Realtime Database → Rules**. Cambiar ese archivo en GitHub no publica las reglas en Firebase. Conservá tus usuarios, los UID de `editors` y todos los datos existentes; no hay que volver a crearlos. No se necesita crear a mano `objetivos` ni `desafios`: la web los crea al guardar como editor.
+
+Guía de uso: `DESAFIOS.md`.
+
 ## Mantener las cuentas
 
 `cuentas.json` contiene la asociación entre los nombres de la lista y las cuentas de GD. Para corregir una cuenta, editá su Account ID o nombre y ejecutá **Publicar Cucumberlist**. Si mantenés un Account ID correcto, un cambio de nombre de GD no pierde la asociación. Después podés seleccionar la cuenta publicada desde los ajustes de editor.

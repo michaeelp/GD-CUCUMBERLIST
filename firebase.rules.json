@@ -111,6 +111,147 @@
     "changelogSeen": {
       ".read": false,
       ".write": false
+    },
+    "objetivos": {
+      ".read": true,
+      "$player": {
+        ".write": "auth != null && root.child('editors').child(auth.uid).val() === true && ($player === 'thiaguinhio' || $player === 'michaeelp' || $player === 'nzrv')",
+        ".validate": "newData.hasChildren(['id','name','creator','difficulty','tier','best','createdAt','updatedAt']) && (data.child('id').val() !== newData.child('id').val() || (newData.child('best').val() >= data.child('best').val() && newData.child('createdAt').val() === data.child('createdAt').val())) && (data.child('id').val() === newData.child('id').val() || newData.child('createdAt').val() === now)",
+        "id": {
+          ".validate": "newData.isString() && newData.val().matches(/^[0-9]+$/)"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200"
+        },
+        "creator": {
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "difficulty": {
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "tier": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+        },
+        "best": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100 && newData.val() % 1 === 0"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber() && newData.val() === now"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "desafios": {
+      ".read": true,
+      "diarios": {
+        "$period": {
+          "$player": {
+            ".write": "auth != null && root.child('editors').child(auth.uid).val() === true && ($player === 'thiaguinhio' || $player === 'michaeelp' || $player === 'nzrv') && !data.exists() && newData.exists()",
+            ".validate": "newData.hasChildren(['id','name','creator','difficulty','tier','kind','player','period','referenceTier','targetTier','startsAt','endsAt','createdAt','version']) && newData.child('endsAt').val() - newData.child('startsAt').val() === 86400000 && newData.child('startsAt').val() % 86400000 === 10800000 && newData.child('tier').val() <= newData.child('referenceTier').val() && newData.child('targetTier').val() <= newData.child('referenceTier').val()",
+            "id": {
+              ".validate": "newData.isString() && newData.val().matches(/^[0-9]+$/)"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200"
+            },
+            "creator": {
+              ".validate": "newData.isString() && newData.val().length <= 200"
+            },
+            "difficulty": {
+              ".validate": "newData.isString() && newData.val().length <= 100"
+            },
+            "tier": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() === now"
+            },
+            "referenceTier": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 1000"
+            },
+            "targetTier": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 1000"
+            },
+            "period": {
+              ".validate": "newData.isString() && newData.val() === $period && $period.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)"
+            },
+            "startsAt": {
+              ".validate": "newData.isNumber() && newData.val() <= now"
+            },
+            "endsAt": {
+              ".validate": "newData.isNumber() && newData.val() > now"
+            },
+            "version": {
+              ".validate": "newData.val() === 1"
+            },
+            "$other": {
+              ".validate": false
+            },
+            "kind": {
+              ".validate": "newData.val() === 'daily'"
+            },
+            "player": {
+              ".validate": "newData.val() === $player"
+            }
+          }
+        }
+      },
+      "semanales": {
+        "$period": {
+          ".write": "auth != null && root.child('editors').child(auth.uid).val() === true && !data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['id','name','creator','difficulty','tier','kind','player','period','referenceTier','targetTier','startsAt','endsAt','createdAt','version']) && newData.child('endsAt').val() - newData.child('startsAt').val() === 604800000 && newData.child('startsAt').val() % 604800000 === 356400000",
+          "id": {
+            ".validate": "newData.isString() && newData.val().matches(/^[0-9]+$/)"
+          },
+          "name": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200"
+          },
+          "creator": {
+            ".validate": "newData.isString() && newData.val().length <= 200"
+          },
+          "difficulty": {
+            ".validate": "newData.isString() && newData.val().length <= 100"
+          },
+          "tier": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && newData.val() === now"
+          },
+          "referenceTier": {
+            ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 1000"
+          },
+          "targetTier": {
+            ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 1000"
+          },
+          "period": {
+            ".validate": "newData.isString() && newData.val() === $period && $period.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)"
+          },
+          "startsAt": {
+            ".validate": "newData.isNumber() && newData.val() <= now"
+          },
+          "endsAt": {
+            ".validate": "newData.isNumber() && newData.val() > now"
+          },
+          "version": {
+            ".validate": "newData.val() === 1"
+          },
+          "$other": {
+            ".validate": false
+          },
+          "kind": {
+            ".validate": "newData.val() === 'weekly'"
+          },
+          "player": {
+            ".validate": "newData.val() === 'all'"
+          }
+        }
+      }
     }
   }
 }

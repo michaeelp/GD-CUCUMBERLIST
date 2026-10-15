@@ -14,3 +14,9 @@ No se modificaron usuarios ni reglas de tu Firebase durante el desarrollo. La le
 Las reglas mantienen la lectura pública de la lista y el historial. Solo los UID de `editors` pueden editar. La aplicación no puede darse permisos a sí misma. Si las reglas anteriores admiten escritura pública, es necesario publicar las nuevas para cerrar ese acceso; ocultar botones no protege la base.
 
 El HTML original no podrá continuar editando anónimamente después de activar las reglas nuevas. Los registros existentes se conservan. No se requieren Firestore, Cloud Functions ni contraseñas administrativas en el código.
+
+## Si ya tenés una cuenta de editor
+
+Para esta actualización, publicá el `firebase.rules.json` incluido en **Realtime Database → Rules**. No repitas el alta ni reemplaces los datos de la base. Las nuevas rutas `objetivos` y `desafios` tienen lectura pública y escritura limitada a los mismos UID de `editors`. La web crea sus nodos al guardar; no hace falta crearlos manualmente.
+
+Los objetivos validan porcentajes enteros de 0 a 100 y conservan el mejor porcentaje de un mismo nivel. Los desafíos fijados son inmutables durante su período, también para editores. La web se encarga del cambio de día y semana.

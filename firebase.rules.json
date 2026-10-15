@@ -1,0 +1,116 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "editors": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": false
+      }
+    },
+    "pasados": {
+      ".read": true,
+      "$level": {
+        ".validate": "newData.hasChildren(['name', 'tier']) && newData.child('name').isString() && newData.child('tier').isNumber() && newData.child('tier').val() >= 0",
+        "id": {
+          ".write": "auth != null && root.child('editors').child(auth.uid).val() === true",
+          ".validate": "newData.isString() && newData.val().matches(/^[0-9]+$/)"
+        },
+        "name": {
+          ".write": "auth != null && root.child('editors').child(auth.uid).val() === true",
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200"
+        },
+        "creator": {
+          ".write": "auth != null && root.child('editors').child(auth.uid).val() === true",
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "difficulty": {
+          ".write": "auth != null && root.child('editors').child(auth.uid).val() === true",
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "tier": {
+          ".write": "auth != null && root.child('editors').child(auth.uid).val() === true",
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+        },
+        "thiaguinhio": {
+          ".write": "auth != null && root.child('editors').child(auth.uid).val() === true",
+          ".validate": "newData.isBoolean()"
+        },
+        "michaeelp": {
+          ".write": "auth != null && root.child('editors').child(auth.uid).val() === true",
+          ".validate": "newData.isBoolean()"
+        },
+        "nzrv": {
+          ".write": "auth != null && root.child('editors').child(auth.uid).val() === true",
+          ".validate": "newData.isBoolean()"
+        },
+        "history": {
+          "$player": {
+            ".write": "auth != null && root.child('editors').child(auth.uid).val() === true && ($player === 'thiaguinhio' || $player === 'michaeelp' || $player === 'nzrv')",
+            ".validate": "newData.isString() && newData.val().length <= 150"
+          }
+        }
+      }
+    },
+    "historial": {
+      ".read": true,
+      ".indexOn": [
+        "timestamp"
+      ],
+      "$entry": {
+        ".write": "auth != null && root.child('editors').child(auth.uid).val() === true && (!data.exists() || !newData.exists())",
+        ".validate": "newData.hasChildren(['player', 'demonKey', 'demon', 'tier']) && (data.exists() || newData.hasChild('timestamp')) && (newData.child('player').val() === 'thiaguinhio' || newData.child('player').val() === 'michaeelp' || newData.child('player').val() === 'nzrv') && newData.child('demonKey').isString() && (!newData.hasChild('timestamp') || (newData.child('timestamp').isNumber() && newData.child('timestamp').val() <= now + 60000))",
+        "player": {
+          ".validate": "newData.isString() && (!data.exists() || data.val() === newData.val())"
+        },
+        "demonKey": {
+          ".validate": "newData.isString() && (!data.exists() || data.val() === newData.val())"
+        },
+        "timestamp": {
+          ".validate": "newData.isNumber() && (!data.exists() || data.val() === newData.val())"
+        },
+        "demon": {
+          ".write": "auth != null && root.child('editors').child(auth.uid).val() === true && data.parent().exists()",
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "tier": {
+          ".write": "auth != null && root.child('editors').child(auth.uid).val() === true && data.parent().exists()",
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+        },
+        "difficulty": {
+          ".write": "auth != null && root.child('editors').child(auth.uid).val() === true && data.parent().exists()",
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "creator": {
+          ".write": "auth != null && root.child('editors').child(auth.uid).val() === true && data.parent().exists()",
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        }
+      }
+    },
+    "playerAccounts": {
+      ".read": true,
+      "$player": {
+        ".write": "auth != null && root.child('editors').child(auth.uid).val() === true && ($player === 'thiaguinhio' || $player === 'michaeelp' || $player === 'nzrv')",
+        ".validate": "newData.hasChildren(['accountId', 'username']) && newData.child('accountId').isString() && newData.child('accountId').val().matches(/^[0-9]+$/) && newData.child('username').isString() && newData.child('username').val().length <= 30"
+      }
+    },
+    "cucumberChangelog": {
+      ".read": true,
+      "$entry": {
+        ".write": "auth != null && root.child('editors').child(auth.uid).val() === true && !data.exists() && newData.exists()",
+        ".validate": "newData.hasChildren(['changes', 'timestamp', 'signature']) && newData.child('timestamp').isNumber() && newData.child('signature').isString()"
+      }
+    },
+    "syncState": {
+      "lease": {
+        ".read": "auth != null && root.child('editors').child(auth.uid).val() === true",
+        ".write": "auth != null && root.child('editors').child(auth.uid).val() === true",
+        ".validate": "newData.hasChildren(['uid', 'until']) && newData.child('uid').val() === auth.uid && newData.child('until').isNumber() && newData.child('until').val() <= now + 960000"
+      }
+    },
+    "changelogSeen": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}

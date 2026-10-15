@@ -1,76 +1,44 @@
 # GD Cucumberlist — GitHub Pages
 
-Esta carpeta es el repositorio listo para subir. `index.html` está en la raíz y los archivos ya están compilados. No necesitás Node, Vite, un proxy ni Cloud Functions para publicarla.
+Subí todo el contenido de esta carpeta al repositorio, incluyendo `.github`, y seleccioná **Settings → Pages → Source → GitHub Actions**. `index.html` está en la raíz y la aplicación ya está compilada; no necesitás Node para publicarla. Las rutas son relativas y admiten cualquier nombre de repositorio.
 
-## Publicar
+Para activar la actualización, seguí **ACTIVAR_SISTEMA.md**: publicar las reglas nuevas, configurar el verificador y asociar cada UID con su jugador. Las cuentas y completaciones anteriores se conservan. No hace falta Cloud Functions ni un backend contratado.
 
-1. Creá un repositorio público en GitHub y subí **todo el contenido de esta carpeta**, incluyendo `.github`. Dejá `index.html`, `assets`, `data` y `.github` directamente en la raíz del repositorio.
-2. Entrá a **Settings → Pages → Build and deployment → Source** y elegí **GitHub Actions**.
-3. En **Actions**, abrí **Publicar Cucumberlist → Run workflow**. Al terminar, GitHub muestra el enlace de tu página.
+## Funciones
 
-El flujo también publica con cada push a `main` o `master` y está programado cada 6 horas. Puede demorarse según GitHub. Si el repositorio permanece inactivo y GitHub desactiva la programación, podés reactivar el flujo en Actions. Un fallo de GD o Sheets conserva los datos guardados y no impide publicar la copia disponible.
+- Demons diarios al 50 % del tier del hardest personal.
+- Semanal al 60 % de la media de los tres hardests.
+- Cuatro misiones personales diarias, con niveles, porcentajes y estadísticas del perfil.
+- Easy Demon cooperativo diario para los tres.
+- Bingo mensual 4 × 4, adaptado al tiempo disponible, con dos cambios de casilla.
+- Ruleta con dificultad, tier absoluto o relativo, pendientes personales o del grupo, creador, exclusiones, resultados recientes y uno o tres resultados.
+- Objetivo actual y mejor porcentaje, separado del progreso de quests.
+- Monedas, XP, tienda de títulos/colores/insignias, compras y movimientos.
+- Entrega inicial por puntuación y demons registrados, una sola vez: thiaguinhio 5.916; michaeelp 529; nzrv 1.637.
+- Cada jugador modifica exclusivamente sus registros. El administrador gestiona asociaciones y correcciones.
 
-Las rutas son relativas. Sirve tanto en `usuario.github.io/repositorio/` como en `usuario.github.io/` o un dominio propio. No hay que editar el nombre del repositorio dentro del código.
+Horarios: America/Montevideo. El diario renueva a medianoche; el semanal, el lunes; el bingo, al cambiar de mes. Las asignaciones y verificaciones se procesan en la primera ejecución programada de ese período.
 
-Si preferís la publicación desde una rama, también podés seleccionar **Deploy from a branch → main → /(root)** para servir la copia incluida. Para que las actualizaciones automáticas de datos se publiquen, usá la opción **GitHub Actions** indicada arriba.
+## Datos y verificación
 
-## Cuentas ya vinculadas
+Firebase mantiene completaciones y porcentajes en tiempo real. El verificador de GitHub Actions consulta GD y Sheets cada 15 minutos y procesa recompensas y compras. Los perfiles, estadísticas, saldos y asignaciones verificados son de solo lectura para el navegador. Las partidas concretas y porcentajes son declaraciones manuales del jugador.
 
-| Jugador de Cucumberlist | Cuenta pública GD | Account ID |
-|---|---|---|
-| thiaguinhio | thiaguinhio | 18823987 |
-| michaeelp | michaeelp | 24854395 |
-| nzrv | Nzrvv | 13334739 |
+Las consultas se muestran con fecha. Una consulta posterior al vencimiento no demuestra en qué momento se ganaron estrellas, lunas o diamantes. Las misiones de estadísticas que no pudieron verificarse a tiempo no reciben ganancias atribuidas al día anterior.
 
-El nombre de jugador `nzrv` y sus registros de Firebase se conservan. Su perfil, estadísticas y sus nueve formas equipadas corresponden a **Nzrvv**. Los IDs se verificaron contra los servidores públicos de GD.
+La actualización pública de iconos y detalles de niveles continúa mediante **Publicar Cucumberlist**, al hacer push, manualmente y cada seis horas. El verificador no necesita volver a publicar el sitio para actualizar Firebase.
 
-## Cómo se actualizan los datos
+## Archivos
 
-- **Completaciones, puntajes e historial:** Firebase Realtime Database en tiempo real, con la configuración original.
-- **Catálogo de demons:** Google Sheets directamente desde el navegador; además queda una copia publicada como respaldo.
-- **Perfiles, iconos y datos extra de niveles:** el flujo de GitHub Actions consulta información pública de GD al publicar y cada 6 horas. No son datos de GD en tiempo real. El botón «Recargar datos» lee la última consulta publicada; no fuerza una sincronización del juego.
-- **Estrellas, descargas y otros detalles:** se guardan para los niveles consultados. Si un nivel no tiene datos publicados, la ventana conserva la información de Cucumberlist y explica la ausencia de datos extra.
+- `index.html`, `assets/`, `data/`: web lista para publicar.
+- `data/economy-bootstrap.json`: base fija de la entrega inicial; no regenerar en actualizaciones.
+- `firebase.rules.json`: permisos de esta versión.
+- `.github/workflows/pages.yml`: publicación de Pages e iconos.
+- `.github/workflows/verificar.yml`: misiones, perfiles, compras y monedas.
+- `scripts/game_engine.py`: reglas de selección, progreso y economía.
+- `scripts/verificar-juego.py`: verificador autenticado.
+- `cuentas.json`: cuentas de GD.
+- `fuente/`: código React/TypeScript editable y compilación opcional.
+- `tests/`: pruebas del motor y del verificador.
+- `PRUEBAS.md`: verificaciones y límites.
 
-El actualizador solo realiza lecturas de Firebase y de los servidores de GD. No modifica la base, no necesita contraseñas ni claves privadas y no ejecuta migraciones. Los sprites, fuente y SDK iniciales están dentro de esta carpeta.
-
-En repositorios públicos, GitHub permite utilizar runners estándar de Actions sin consumir minutos de pago. No hace falta contratar un Worker ni un backend independiente. Consultá las condiciones y límites vigentes de GitHub.
-
-## Agregar y quitar completaciones
-
-La web ya apunta a tu Firebase original. **La publicación en Pages no configura los permisos de Firebase.** Para habilitar la edición segura, seguí `ACTIVAR_EDICION.md`: habilitar Email/Password, crear un usuario, autorizar su UID y revisar/publicar `firebase.rules.json`.
-
-Si ya hiciste esos pasos, no hay que repetirlos. Añadí `TU_USUARIO.github.io` a los dominios autorizados de Authentication, sin la ruta del repositorio, si Firebase lo requiere. No guardes la contraseña en GitHub.
-
-## Desafíos y próximo hardest
-
-La sección **Desafíos** incluye un diario por jugador, un semanal compartido y el objetivo actual de cada uno. El inicio muestra accesos rápidos y cada perfil muestra su nivel en progreso.
-
-- **Diario:** toma como referencia el hardest registrado de ese jugador y apunta al 90 % de su tier, sin superarlo. Busca niveles pendientes en torno al 80–98 % del hardest. Si falta un candidato en ese tramo, utiliza uno disponible más bajo. Evita repetir los últimos siete diarios y el semanal cuando hay alternativas.
-- **Semanal:** toma la media de los tiers de los tres hardests. Busca un nivel pendiente para los tres cerca de esa media (88–112 %; con los datos incluidos, la referencia es 17,2). Evita repetir los últimos cuatro semanales si hay alternativas. Requiere un hardest registrado para cada jugador.
-- **Renovación:** el diario cambia a las 00:00 de Uruguay y el semanal los lunes a esa hora. El primer editor que abra la web con el catálogo cargado guarda los desafíos del período automáticamente. Hasta ese momento aparecen como **Por fijar**. Una vez guardados, los niveles y sus tiers de referencia quedan fijos durante el período.
-- **Objetivo actual:** un editor elige un nivel pendiente del catálogo por nombre o ID y guarda el mejor porcentaje entero entre 0 y 100. Todos pueden verlo. El mismo nivel conserva su mejor marca; al cambiar de nivel, el avance empieza de nuevo. Si supera el tier del hardest actual, aparece como **Próximo hardest**; si no, como **En juego**.
-- **100 %:** guarda objetivo, completación, fecha y puntos en una operación atómica. Si la completación ya está registrada, no la duplica. También podés seguir usando «Registrar demon»; el objetivo reflejará esa completación.
-- **Victoria en un desafío:** requiere una completación registrada con fecha dentro del día o la semana correspondiente. Los registros antiguos sin fecha no se convierten en victorias del desafío. Los desafíos no añaden puntos extra al ranking.
-
-**Si venís de una versión anterior:** publicá el archivo `firebase.rules.json` actualizado en **Firebase Console → Realtime Database → Rules**. Cambiar ese archivo en GitHub no publica las reglas en Firebase. Conservá tus usuarios, los UID de `editors` y todos los datos existentes; no hay que volver a crearlos. No se necesita crear a mano `objetivos` ni `desafios`: la web los crea al guardar como editor.
-
-Guía de uso: `DESAFIOS.md`.
-
-## Mantener las cuentas
-
-`cuentas.json` contiene la asociación entre los nombres de la lista y las cuentas de GD. Para corregir una cuenta, editá su Account ID o nombre y ejecutá **Publicar Cucumberlist**. Si mantenés un Account ID correcto, un cambio de nombre de GD no pierde la asociación. Después podés seleccionar la cuenta publicada desde los ajustes de editor.
-
-## Archivos principales
-
-- `index.html`, `assets/`: aplicación compilada y recursos.
-- `data/`: últimas consultas públicas verificadas.
-- `cuentas.json`: asociación de cuentas de GD.
-- `.github/workflows/pages.yml`: publicación y actualización automática.
-- `scripts/actualizar-datos.py`: actualizador de lectura y retratos; usa Python y Pillow.
-- `firebase.rules.json`: reglas revisables de edición.
-- `PRUEBAS.md`: comprobaciones realizadas y límites.
-- `CREDITOS.md`: recursos y licencias.
-
-Podés probar localmente con `python3 -m http.server 8000` y abrir `http://localhost:8000`. No abras `index.html` con `file://`.
-
-Documentación oficial del flujo de Pages: https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages
+Para probar el paquete localmente, servilo por HTTP; por ejemplo, `python3 -m http.server 8000`. Abrí `http://localhost:8000`. No uses `file://`.

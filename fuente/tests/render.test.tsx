@@ -1,0 +1,38 @@
+import {resolve} from 'node:path';
+import {Quests,Bingo,Wallet,Roulette} from '../app/GameHub';
+import React from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import assert from 'node:assert/strict';
+import CucumberApp from '../app/CucumberApp';
+import snapshot from '../lib/bootstrap.json';
+import {CompetitionPage,PlayerGoalPanel} from '../app/CompetitionUI';
+import {challengePeriods,chooseDaily,chooseWeekly,nextGoal} from '../lib/competition';
+import {buildLevels} from '../lib/domain';
+import {PLAYERS} from '../lib/config';
+import {readFileSync} from 'node:fs';
+const html=renderToStaticMarkup(<CucumberApp initial={snapshot as any}/>);
+for(const text of ['CUCUMBER','Demon List','Clasificación','thiaguinhio','michaeelp','nzrv','Blade of Justice','259'])assert.ok(html.toLowerCase().includes(text.toLowerCase()),text);
+assert.ok(html.includes('alt="Icono cube de thiaguinhio"'));
+assert.ok(html.includes('Navegación principal'));
+for(const text of ['Cada demon cuenta','Una competencia entre amigos','Tus victorias. Tus récords.'])assert.ok(!html.includes(text));
+console.log('SSR: inicio real, ranking, iconos y navegación renderizados correctamente');
+const now=Date.parse('2026-10-15T18:00:00Z'),periods=challengePeriods(now);
+const catalog=JSON.parse(readFileSync(resolve('../data/catalog.json'),'utf8')).data;
+const levels=buildLevels(snapshot.records as any,catalog);
+const daily=Object.fromEntries(PLAYERS.map(p=>[p,chooseDaily(levels,p,periods.daily,{},null,now)]));
+const goals={nzrv:nextGoal(null,levels.find(d=>!d.nzrv&&d.tier>20.2)!,67,now)};
+const competition:any={now,periods,daily,weekly:chooseWeekly(levels,periods.weekly,{},now),goals,isDailySaved:()=>true,isWeeklySaved:true,connected:true,loaded:true,rulesError:false};
+const props={competition,levels,history:{},editor:true,onAccess:()=>{},onLevel:()=>{}};
+const challenges=renderToStaticMarkup(<CompetitionPage {...props}/>);
+for(const text of ['Desafíos diarios','Desafío semanal','PRÓXIMO HARDEST','67','thiaguinhio','michaeelp','nzrv','17,2'])assert.ok(challenges.includes(text),text);
+assert.equal((challenges.match(/role="progressbar"/g)||[]).length,7);
+const profile=renderToStaticMarkup(<PlayerGoalPanel {...props} player="nzrv"/>);assert.ok(profile.includes('67'));assert.ok(profile.includes('Su próximo objetivo'));
+const denied=renderToStaticMarkup(<CompetitionPage {...props} competition={{...competition,rulesError:true}}/>);assert.ok(denied.includes('firebase.rules.json'));
+console.log('SSR: desafíos diarios, semanal, progreso, objetivo en perfil y aviso de reglas renderizados');
+
+const preview=JSON.parse(readFileSync(resolve('../data/game-preview.json'),'utf8'));
+const manifest=JSON.parse(readFileSync(resolve('../data/economy-bootstrap.json'),'utf8'));
+const game:any={states:preview.gameState,coop:preview.cooperativas,prefs:{},runs:{},meta:{lastRun:now},initial:manifest,shop:preview.shop,preview:false,rulesError:false,player:'nzrv',admin:false,canEdit:(p:string)=>p==='nzrv',request:async()=>{},progress:async()=>{},preference:async()=>{},now};
+const hubProps={game,levels,history:{},onLevel:()=>{},onTarget:()=>{},onAccess:()=>{},notify:()=>{},reduced:true};
+for(const [Component,text] of [[Quests,'Misiones'],[Bingo,'Bingo mensual'],[Wallet,'Entrega inicial:'],[Roulette,'Ruleta de demons']] as const){const markup=renderToStaticMarkup(<Component {...hubProps}/>);assert.ok(markup.includes(text),text);}
+console.log('SSR: misiones, bingo, monedas, tienda y ruleta renderizados');

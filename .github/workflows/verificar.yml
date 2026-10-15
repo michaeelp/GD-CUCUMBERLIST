@@ -1,0 +1,37 @@
+name: Verificar misiones y monedas
+on:
+  push:
+    branches: [main, master]
+    paths: ['scripts/game_engine.py', 'scripts/verificar-juego.py', 'data/economy-bootstrap.json', '.github/workflows/verificar.yml']
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+    inputs:
+      link_uid:
+        description: 'UID a vincular (opcional)'
+        required: false
+      link_player:
+        description: 'Jugador (solo si vinculás un UID)'
+        type: choice
+        options: ['', thiaguinhio, michaeelp, nzrv]
+        required: false
+permissions:
+  contents: read
+concurrency:
+  group: cucumber-verifier
+  cancel-in-progress: false
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v6
+      - name: Instalar autenticación
+        run: python3 -m pip install --disable-pip-version-check 'google-auth[requests]>=2.40,<3'
+      - name: Verificar perfiles y procesar recompensas
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          INITIAL_ADMIN_UID: ${{ vars.INITIAL_ADMIN_UID }}
+          LINK_UID: ${{ inputs.link_uid }}
+          LINK_PLAYER: ${{ inputs.link_player }}
+        run: python3 scripts/verificar-juego.py

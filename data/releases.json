@@ -1,0 +1,43 @@
+[
+ {"version":"4.0.0","name":"Privacidad y personalización","date":"2026-10-16","entries":[
+  {"type":"security","title":"Misiones, bingo, desafíos e inventario privados","detail":"Cada cuenta consulta únicamente sus propios datos, también desde las reglas de Firebase."},
+  {"type":"new","title":"Compras y equipamiento al instante","detail":"Saldo, recibo e inventario se confirman juntos. Las compras simultáneas no pierden descuentos ni cobran dos veces."},
+  {"type":"new","title":"Recompensas con validación en Firebase","detail":"Los avances comprobables actualizan las misiones y pueden cobrar sus premios sin esperar al verificador."},
+  {"type":"new","title":"102 opciones de personalización","detail":"30 títulos, 24 colores, 24 insignias, 12 temas y 12 fuentes."},
+  {"type":"new","title":"Temas y fuentes para todo el perfil","detail":"El tema y la tipografía elegidos se aplican al perfil público completo."},
+  {"type":"new","title":"Biografía y nombre visible","detail":"La cuenta de GD y el jugador original siguen identificados."},
+  {"type":"improved","title":"Tienda con filtros, vista previa e inventario propio"},
+  {"type":"improved","title":"Ajustes ampliados y sincronizados","detail":"Sonido, animaciones, contraste, densidad, cobro automático, confirmación de compras y página inicial."},
+  {"type":"new","title":"Historial de versiones interactivo","detail":"Búsqueda, filtros, secciones desplegables y enlaces por versión."},
+  {"type":"fixed","title":"Las cuentas privadas se limpian al cerrar o cambiar de sesión"},
+  {"type":"security","title":"La apariencia pública no expone saldos ni compras"}
+ ]},
+ {"version":"3.0.0","name":"Misiones, bingo y monedas","date":"2026-10-15","entries":[
+  {"type":"new","title":"Cuatro misiones diarias por jugador","detail":"Completaciones, porcentajes, estadísticas de GD y objetivos combinados."},
+  {"type":"new","title":"Easy Demon cooperativo diario"},
+  {"type":"new","title":"Bingo mensual de 16 objetivos","detail":"Metas adaptadas al tiempo disponible y dos cambios de casilla."},
+  {"type":"new","title":"Ruleta de demons","detail":"Filtros de dificultad, tier, creador, pendientes, exclusiones y resultados recientes."},
+  {"type":"new","title":"Monedas, XP y primera tienda de cosméticos"},
+  {"type":"new","title":"Entrega inicial por puntuación y demons registrados"},
+  {"type":"security","title":"Cuentas vinculadas a un jugador mediante UID"},
+  {"type":"improved","title":"Diario al 50 % del hardest y semanal al 60 % de la media"},
+  {"type":"improved","title":"Interfaz sin frases decorativas"},
+  {"type":"new","title":"Verificación programada de perfiles y estadísticas"}
+ ]},
+ {"version":"2.0.0","name":"Perfiles y GitHub Pages","date":"2026-10-15","entries":[
+  {"type":"improved","title":"Interfaz de Geometry Dash con fuente Pusab"},
+  {"type":"new","title":"Perfiles, estadísticas e iconos reales de GD"},
+  {"type":"fixed","title":"nzrv vinculado a Nzrvv, Account ID 13334739"},
+  {"type":"new","title":"Carpeta compilada para GitHub Pages"},
+  {"type":"new","title":"Actualización de perfiles e iconos con GitHub Actions"},
+  {"type":"new","title":"Desafíos diarios y semanal"},
+  {"type":"new","title":"Objetivo actual y mejor porcentaje"},
+  {"type":"improved","title":"Registro atómico del 100 % e historial conservado"},
+  {"type":"fixed","title":"Configuración de Firebase corregida"}
+ ]},
+ {"version":"original","name":"Cucumberlist original","date":null,"entries":[
+  {"type":"new","title":"Lista de demons y completaciones de los tres jugadores"},
+  {"type":"new","title":"Clasificación por tier × 10"},
+  {"type":"new","title":"Datos en Firebase Realtime Database y catálogo de Google Sheets"}
+ ]}
+]

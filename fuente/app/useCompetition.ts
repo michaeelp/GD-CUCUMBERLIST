@@ -2,8 +2,9 @@
 import {useEffect,useMemo,useRef,useState,useCallback} from 'react';
 import {PLAYERS,type Player} from '@/lib/config';
 import {addPatch,buildLevels,type Level,type Records} from '@/lib/domain';
+import {type Game} from './useGame';
 import {challengePeriods,chooseDaily,chooseWeekly,nextGoal,shiftDay,type Goals,type Goal,type Challenge,type DailyMap,type WeeklyMap} from '@/lib/competition';
-export function useCompetition({firebase,editor,levels,catalog,notify,canEdit}:{firebase:any;editor:boolean;levels:Level[];catalog:Level[];notify:(text:string)=>void;canEdit?:(p:Player)=>boolean}){
+export function useCompetition({firebase,editor,levels,catalog,notify,canEdit,game}:{firebase:any;editor:boolean;levels:Level[];catalog:Level[];notify:(text:string)=>void;canEdit?:(p:Player)=>boolean;game:Game}){
  const [goals,setGoals]=useState<Goals>({});const [dailies,setDailies]=useState<DailyMap>({});const [weeklies,setWeeklies]=useState<WeeklyMap>({});
  const [now,setNow]=useState(()=>Date.now());const [loaded,setLoaded]=useState(false);const [connected,setConnected]=useState(false);const [rulesError,setRulesError]=useState(false);const [busy,setBusy]=useState(false);
  const serverOffset=useRef(0);const ensuring=useRef(false);const attempted=useRef('');
@@ -15,15 +16,15 @@ export function useCompetition({firebase,editor,levels,catalog,notify,canEdit}:{
   const done=(key:string)=>{if(!first.has(key)){first.add(key);remaining--;if(!remaining)setLoaded(true);}};
   const listen=(query:any,key:string,apply:(value:any)=>void)=>{const on=(snap:any)=>{apply(snap.val()||{});done(key);};const fail=()=>{setRulesError(true);done(key);};query.on('value',on,fail);cleanups.push(()=>query.off('value',on));};
   listen(db.ref('objetivos'),'goals',setGoals);
-  listen(db.ref('desafios/diarios').orderByKey().startAt(shiftDay(periods.daily.key,-14)),'daily',setDailies);
-  listen(db.ref('desafios/semanales').orderByKey().limitToLast(8),'weekly',setWeeklies);
+  done('daily');
+  done('weekly');
   const offset=db.ref('.info/serverTimeOffset');const onOffset=(s:any)=>{serverOffset.current=s.val()||0;setNow(Date.now()+serverOffset.current);};offset.on('value',onOffset);cleanups.push(()=>offset.off('value',onOffset));
   const connection=db.ref('.info/connected');const onConnection=(s:any)=>setConnected(s.val()===true);connection.on('value',onConnection);cleanups.push(()=>connection.off('value',onConnection));
   return()=>cleanups.forEach(f=>f());
  },[firebase,periods.daily.key]);
- const weeklyPreview=useMemo(()=>chooseWeekly(levels,periods.weekly,weeklies,now),[levels,periods.weekly.key,weeklies]);
- const weekly=weeklies[periods.weekly.key]||weeklyPreview;
- const daily=useMemo(()=>Object.fromEntries(PLAYERS.map(p=>[p,dailies[periods.daily.key]?.[p]||chooseDaily(levels,p,periods.daily,dailies,weekly,now)])) as Record<Player,Challenge|null>,[levels,periods.daily.key,dailies,weekly]);
+ const own=game.player;const assigned=own?game.raw?.assignments:undefined;
+ const weekly=assigned?.weekly||null;
+ const daily=Object.fromEntries(PLAYERS.map(p=>[p,p===own?assigned?.daily||null:null])) as Record<Player,Challenge|null>;
  const ensure=useCallback(async()=>{notify('Los desafíos se asignan en la verificación programada.');},[notify]);
  const saveGoal=useCallback(async(p:Player,d:Level,best:number)=>{
   if(!firebase?.auth().currentUser||!editor||!connected||(canEdit&&!canEdit(p)))throw Error('Iniciá sesión con tu cuenta y comprobá la conexión para guardar.');
@@ -49,6 +50,6 @@ export function useCompetition({firebase,editor,levels,catalog,notify,canEdit}:{
   if(!firebase?.auth().currentUser||!editor||!connected||(canEdit&&!canEdit(p)))throw Error('Necesitás la cuenta de este jugador y una conexión activa.');
   setBusy(true);try{await firebase.database().ref(`objetivos/${p}`).remove();notify(`Objetivo de ${p} retirado. Sus completaciones se conservan.`);}finally{setBusy(false);}
  },[firebase,editor,connected,notify,canEdit]);
- return {goals,daily,weekly,dailies,weeklies,periods,now,loaded,connected,rulesError,busy,ensure,saveGoal,clearGoal,isDailySaved:(p:Player)=>!!dailies[periods.daily.key]?.[p],isWeeklySaved:!!weeklies[periods.weekly.key]};
+ return {goals,daily,weekly,dailies,weeklies,periods,now,loaded,connected,rulesError,busy,ensure,saveGoal,clearGoal,isDailySaved:(p:Player)=>p===own&&!!assigned?.daily,isWeeklySaved:!!assigned?.weekly,player:own};
 }
 export type Competition=ReturnType<typeof useCompetition>;

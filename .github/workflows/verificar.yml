@@ -2,7 +2,7 @@ name: Verificar misiones y monedas
 on:
   push:
     branches: [main, master]
-    paths: ['scripts/game_engine.py', 'scripts/verificar-juego.py', 'data/economy-bootstrap.json', '.github/workflows/verificar.yml']
+    paths: ['scripts/game_engine.py', 'scripts/verificar-juego.py', 'data/shop.json', 'data/economy-bootstrap.json', '.github/workflows/verificar.yml']
   schedule:
     - cron: '7,22,37,52 * * * *'
   workflow_dispatch:

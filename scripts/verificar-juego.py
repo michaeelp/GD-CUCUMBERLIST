@@ -112,9 +112,14 @@ def run(db,bind_uid='',bind_player='',admin_uid=''):
   for key in d.get('_keys',[]):
    if not root['pasados'][key].get('id'):patch['pasados/'+key+'/id']=d['id']
  if patch:db.patch('',patch)
+ db.request('shopCatalog','PUT',{item['id']:item for item in SHOP})
  for p in PLAYERS:
+  previous=db.get('gameState/'+p) or {}
+  if previous.get('version',0)<4:
+   legacy=previous.get('wallet',{}).get('equipped',{})
+   db.transaction('publicProfiles/'+p,lambda current:{**legacy,**(current or {})} or {'showActivity':True})
   state=db.transaction('gameState/'+p,lambda old:update_player(old,root,levels,p,manifest,now));print(p,'saldo',state['wallet']['balance'],'misiones',sum(q['completed'] for q in state['daily']['quests']))
- db.patch('gameMeta',{'lastRun':now,'version':3,'shop':SHOP,'initialFormula':manifest['formula']})
+ db.patch('gameMeta',{'lastRun':now,'version':4,'shop':SHOP,'initialFormula':manifest['formula']})
  print('Verificación finalizada. No se modificaron usuarios ni reglas.')
 
 def main():
@@ -125,7 +130,7 @@ def main():
    node=root;keys=path.split('/')
    for key in keys[:-1]:node=node.setdefault(key,{})
    node[keys[-1]]=value
-  preview={p:update_player({},root,levels,p,manifest,now) for p in PLAYERS};(ROOT/'data/game-preview.json').write_text(json.dumps({'preview':True,'gameState':preview,'cooperativas':root.get('cooperativas',{}),'desafios':root.get('desafios',{}),'shop':SHOP},ensure_ascii=False,separators=(',',':')))
+  preview={p:update_player({},root,levels,p,manifest,now) for p in PLAYERS};(ROOT/'tests/game-preview.local.json').write_text(json.dumps({'preview':True,'gameState':preview,'cooperativas':root.get('cooperativas',{}),'desafios':root.get('desafios',{}),'shop':SHOP},ensure_ascii=False,separators=(',',':')))
   print('Vista previa generada; no se escribió en Firebase.');return
  secret=os.environ.get('FIREBASE_SERVICE_ACCOUNT','')
  if not secret:raise RuntimeError('Falta el secret FIREBASE_SERVICE_ACCOUNT. Consultá ACTIVAR_SISTEMA.md.')

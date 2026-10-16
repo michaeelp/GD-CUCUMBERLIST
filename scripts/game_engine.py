@@ -5,7 +5,9 @@ from zoneinfo import ZoneInfo
 import hashlib,math,random
 PLAYERS=('thiaguinhio','michaeelp','nzrv')
 DAY=86400000
-SHOP=[{'id':'title_explorador','name':'Explorador','kind':'title','value':'Explorador','price':150},{'id':'title_cazador','name':'Cazador de demons','kind':'title','value':'Cazador de demons','price':500},{'id':'title_veterano','name':'Veterano','kind':'title','value':'Veterano','price':1500},{'id':'color_cyan','name':'Cian','kind':'color','value':'#62e8ff','price':250},{'id':'color_gold','name':'Dorado','kind':'color','value':'#ffe274','price':350},{'id':'color_pink','name':'Rosa','kind':'color','value':'#ff83ca','price':250},{'id':'badge_star','name':'Estrella','kind':'badge','value':'★','price':300},{'id':'badge_diamond','name':'Diamante','kind':'badge','value':'◆','price':600}]
+import json
+from pathlib import Path
+SHOP=json.loads((Path(__file__).resolve().parents[1]/'data/shop.json').read_text())
 STATS={'stars':'estrellas','moons':'lunas','diamonds':'diamantes','userCoins':'user coins','demons':'demons'}
 def period(now):
  d=datetime.fromtimestamp(now/1000,ZoneInfo('America/Montevideo'));start=d.replace(hour=0,minute=0,second=0,microsecond=0);week=start-timedelta(days=start.weekday());month=start.replace(day=1);end=(month.replace(day=28)+timedelta(days=4)).replace(day=1)
@@ -72,7 +74,7 @@ def events(root,levels,p,start,end):
 def credit(g,key,amount,reason,now,xp=0):
  w=g['wallet'];ledger=w.setdefault('ledger',{})
  if key in ledger:return False
- ledger[key]={'amount':int(amount),'reason':reason,'at':now,'xp':xp};w['balance']=w.get('balance',0)+int(amount);w['earned']=w.get('earned',0)+max(0,int(amount));w['xp']=w.get('xp',0)+xp;return True
+ ledger[key]={'amount':int(amount),'reason':reason,'at':now,'xp':xp,'kind':'purchase' if key.startswith('buy_') else key.split('_')[0],'statMission':key.startswith('mission_') and any(term in reason for term in STATS.values())};w['balance']=w.get('balance',0)+int(amount);w['earned']=w.get('earned',0)+max(0,int(amount));w['xp']=w.get('xp',0)+xp;return True
 
 def manual_best(root,p,ident):
  return max(root.get('runs',{}).get(p,{}).get(ident,{}).get('best',0),root.get('objetivos',{}).get(p,{}).get('best',0) if root.get('objetivos',{}).get(p,{}).get('id')==ident else 0)
@@ -184,6 +186,7 @@ def make_bingo(root,levels,p,now):
 def update_player(old,root,levels,p,manifest,now):
  g=deepcopy(old or {});t=period(now);w=g.setdefault('wallet',{'balance':0,'earned':0,'xp':0,'ledger':{},'paidLevels':{},'owned':{},'equipped':{}})
  initial=manifest['players'][p]
+ g['initialCredit']={k:initial[k] for k in ['count','points','coins']}
  if 'retro_v1' not in w.setdefault('ledger',{}):
   credit(g,'retro_v1',initial['coins'],'Saldo inicial: puntos y demons registrados',now)
   w.setdefault('paidLevels',{}).update({str(i):True for i in initial['levelIds']});g['activatedAt']=now
@@ -218,11 +221,11 @@ def update_player(old,root,levels,p,manifest,now):
    if not product or not w.setdefault('owned',{}).get(item):ok=False;message='Primero comprá el artículo'
    else:w.setdefault('equipped',{})[product['kind']]=item
   elif kind=='rerollQuest':
-   if cmd.get('period')!=t['day'] or daily['rerollsUsed']>=1 or not isinstance(i,int) or i not in range(4) or daily['quests'][i].get('completed'):ok=False;message='Cambio diario no disponible'
+   if cmd.get('period')!=t['day'] or daily['rerollsUsed']>=1 or not isinstance(i,int) or i not in range(4) or daily['quests'][i].get('completed') or 'mission_'+daily['quests'][i]['id'] in w['ledger']:ok=False;message='Cambio diario no disponible'
    else:daily['quests'][i]=rerolled(root,levels,p,t['day'],i,now,daily['quests'][i],1);daily['rerollsUsed']+=1
   elif kind=='rerollBingo':
    b=g.get('bingo')
-   if not b or b['month']!=t['month'] or cmd.get('period')!=t['month'] or b.get('replacementsUsed',0)>=2 or not isinstance(i,int) or i not in range(16) or b['cells'][i].get('completed'):ok=False;message='Cambio de casilla no disponible'
+   if not b or b['month']!=t['month'] or cmd.get('period')!=t['month'] or b.get('replacementsUsed',0)>=2 or not isinstance(i,int) or i not in range(16) or b['cells'][i].get('completed') or f'bingo_{b["month"]}_cell_{i}' in w['ledger']:ok=False;message='Cambio de casilla no disponible'
    else:
     q=rerolled(root,levels,p,t['month']+'replace'+str(i),i%4,now,b['cells'][i],b['replacementsUsed']+1);q.update(id=str(i),reward=50);b['cells'][i]=q;b['replacementsUsed']=b.get('replacementsUsed',0)+1
   elif kind=='verify':message='Perfil comprobado en esta ejecución'
@@ -256,4 +259,7 @@ def update_player(old,root,levels,p,manifest,now):
   return b
  if b and b['month']!=t['month']:g.setdefault('bingoArchive',{})[b['month']]=finish_bingo(b);b=None
  if not b:b=make_bingo(root,levels,p,now)
- g['bingo']=finish_bingo(b);g['updatedAt']=now;return g
+ g['bingo']=finish_bingo(b);g['assignments']={'daily':root.get('desafios',{}).get('diarios',{}).get(t['day'],{}).get(p),'weekly':root.get('desafios',{}).get('semanales',{}).get(t['week']),'cooperative':root.get('cooperativas',{}).get(t['day'])};g['version']=4
+ for key,entry in w['ledger'].items():
+  entry.setdefault('statMission',key.startswith('mission_') and any(term in entry.get('reason','') for term in STATS.values()))
+ g['updatedAt']=now;return g

@@ -6,3 +6,4 @@ fuente/node_modules/
 fuente/.test-*/
 fuente/public/
 *.tsbuildinfo
+tests/*.local.json

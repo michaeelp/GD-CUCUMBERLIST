@@ -28,10 +28,16 @@ try:
  for _ in range(80):
   try:db.get('');break
   except urllib.error.URLError:time.sleep(.1)
- root={k:json.loads((ROOT/'data'/f'{k}.json').read_text())['data'] for k in ['pasados','historial']};root['legacyKeep']={'preserved':True};db.request('','PUT',root)
+ root={k:json.loads((ROOT/'data'/f'{k}.json').read_text())['data'] for k in ['pasados','historial']};root['legacyKeep']={'preserved':True}
+ root['gameState']={'nzrv':{'version':3,'wallet':{'balance':0,'earned':0,'xp':0,'ledger':{},'paidLevels':{},'owned':{'title_explorador':True},'equipped':{'title':'title_explorador'}}}}
+ db.request('','PUT',root)
  worker.run(db,admin_uid='adminUID')
  first=db.get('gameState');assert {p:first[p]['wallet']['balance'] for p in worker.PLAYERS}=={'thiaguinhio':5916,'michaeelp':529,'nzrv':1637}
  assert db.get('legacyKeep')=={'preserved':True}
+ assert len(db.get('shopCatalog'))==102 and db.get('gameMeta/version')==4
+ assert db.get('publicProfiles/nzrv/title')=='title_explorador'
+ assert first['nzrv']['wallet']['owned']['title_explorador'] is True
+ assert all(first[p]['version']==4 and first[p]['assignments']['daily'] and first[p]['initialCredit']['coins']>0 and 'levelIds' not in first[p]['initialCredit'] for p in worker.PLAYERS)
  assert sum(sum(bool(d.get(p)) for p in worker.PLAYERS) for d in db.get('pasados').values())==259
  worker.run(db,bind_uid='uidNzrv',bind_player='nzrv')
  assert db.get('playerOwners/nzrv')=='uidNzrv'
@@ -39,6 +45,17 @@ try:
  second=db.get('gameState');assert all(second[p]['wallet']['balance']==first[p]['wallet']['balance'] for p in worker.PLAYERS)
  db.patch('requests/nzrv',{'r1':{'kind':'purchase','item':'color_gold','at':int(time.time()*1000)},'r2':{'kind':'purchase','item':'color_gold','at':int(time.time()*1000)}})
  worker.run(db);assert db.get('gameState/nzrv/wallet/balance')==1637-350
+ # Interleave an instant browser purchase after the worker reads its ETag.
+ # The stale PUT must retry and preserve the receipt, inventory and debit.
+ request_before=db.request;interleaved=False
+ def with_purchase(path,method='GET',value=None,etag=None):
+  global interleaved
+  if path=='gameState/nzrv' and method=='PUT' and etag and not interleaved:
+   interleaved=True;wallet=request_before('gameState/nzrv/wallet')[0]
+   request_before('gameState/nzrv/wallet','PATCH',{'balance':wallet['balance']-250,'lastOp':'buy_color_pink','owned/color_pink':True,'ledger/buy_color_pink':{'kind':'purchase','item':'color_pink','amount':-250,'xp':0,'reason':'Compra: Rosa','at':int(time.time()*1000),'statMission':False}})
+  return request_before(path,method,value,etag)
+ db.request=with_purchase;worker.run(db);db.request=request_before
+ wallet=db.get('gameState/nzrv/wallet');assert interleaved and wallet['balance']==1637-350-250 and wallet['owned']['color_pink'] and wallet['ledger']['buy_color_pink']['amount']==-250
  # Two actual CAS transactions do not lose either credit.
  def add_one(key):
   def apply(old):
@@ -48,7 +65,7 @@ try:
   return db.transaction('cas-test',apply)
  with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:list(pool.map(add_one,['a','b']))
  assert db.get('cas-test')['balance']==2
- print('PASS: worker real, saldo retroactivo único, asociaciones, conservación de 259 registros, compras duplicadas y concurrencia ETag.')
+ print('PASS: worker real, migración v4, 102 productos, créditos únicos, asociaciones, 259 registros y compra instantánea conservada ante un conflicto ETag.')
 finally:
  process.terminate()
  try:process.wait(timeout=5)

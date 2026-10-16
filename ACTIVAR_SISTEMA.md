@@ -1,6 +1,15 @@
-# Activar cuentas, misiones y monedas
+# Activar Cucumberlist 4
 
-La carpeta está compilada para GitHub Pages. Las completaciones se guardan en Firebase; los saldos y las misiones se verifican mediante GitHub Actions, sin Cloud Functions ni un servidor contratado.
+La carpeta está compilada para GitHub Pages. Firebase mantiene las cuentas privadas, las compras y los cambios de perfil en vivo. GitHub Actions consulta GD y prepara asignaciones, sin Cloud Functions ni un servidor contratado.
+
+## Actualización desde la versión 3
+
+1. Subí todos los archivos nuevos al mismo repositorio, incluyendo `.github`, `data`, `scripts` y `assets`. Conservá el mismo `data/economy-bootstrap.json`.
+2. Publicá las reglas nuevas de `firebase.rules.json` en Firebase Console → Realtime Database → Rules.
+3. Ejecutá **Verificar misiones y monedas** una vez con el workflow actualizado. Reutilizá el secret existente; no hace falta crear usuarios, regenerar claves ni volver a vincular UIDs.
+4. Publicá el sitio y recargá la página.
+
+La tarea publica el catálogo confiable de 102 cosméticos, copia las asignaciones dentro de cada cuenta y migra los cosméticos equipados a la apariencia pública. Conserva monedas, recibos, inventarios y progresos. `data/game-preview.json` queda reemplazado por un archivo vacío de cuentas para retirar la antigua muestra pública; no lo sustituyas por una copia de Firebase.
 
 ## 1. Publicar la web y las reglas
 
@@ -32,7 +41,7 @@ Esta primera ejecución acredita automáticamente:
 
 Fórmula: **20 × demons registrados + floor(puntos / 5)**. La operación se registra como `retro_v1`, una sola vez por jugador. Cambiar de UID no vuelve a pagarla. Los niveles incluidos también quedan marcados como ya recompensados.
 
-Hasta que esta ejecución termine, la web muestra una vista previa y el saldo inicial como pendiente. No se simula un depósito ni se permite gastar ese saldo de muestra.
+Hasta que esta ejecución termine, la cuenta muestra sus asignaciones como pendientes. No se publican vistas previas con las misiones o inventarios de los tres jugadores.
 
 ## 3. Vincular las tres cuentas
 
@@ -58,19 +67,28 @@ La asociación la autoriza el administrador; no es un inicio de sesión oficial 
 
 La tarea consulta los tres perfiles públicos de GD y el catálogo de Google Sheets. Conserva la última consulta válida cuando una fuente falla. No escribe fechas falsas ni rellena datos desconocidos.
 
-A medianoche de Uruguay asigna el nuevo período en su primera ejecución. Hasta entonces puede mostrarse la asignación anterior o una propuesta. No hace falta que entre un administrador diariamente.
+A medianoche de Uruguay asigna el nuevo período en su primera ejecución. Hasta entonces puede mostrarse la asignación anterior o el estado pendiente. No hace falta que entre un administrador diariamente.
 
-Registrar niveles y porcentajes es inmediato cuando Firebase confirma. Recompensas, compras, cambios de misiones y casillas se procesan en la próxima ejecución. «Solicitar comprobación» deja una solicitud; no inicia GitHub Actions desde el navegador ni finge una consulta nueva.
+Registrar niveles y porcentajes, comprar, equipar y editar el perfil o sus ajustes es inmediato al confirmar Firebase. Los premios de niveles, misiones, desafíos y bingo también pueden cobrarse en vivo cuando las reglas comprueban sus condiciones; el cobro automático se puede desactivar en Ajustes.
+
+Las estadísticas públicas de GD se consultan cada 15 minutos. Cambiar misiones o casillas y pedir una verificación conserva el procesamiento programado. Una solicitud no inicia GitHub Actions desde el navegador ni representa una consulta nueva de GD.
 
 Las estadísticas se miden desde una consulta inicial válida. Si faltan datos actuales, la misión queda esperando su línea de base. Una consulta posterior al vencimiento no permite fechar las ganancias del período anterior y no concede retroactivamente ese progreso. Las completaciones manuales fechadas dentro del período sí pueden reconocerse después.
 
-Los saldos, el catálogo verificado, los perfiles verificados y las asignaciones no admiten escritura del navegador, ni siquiera desde una sesión de administrador de la página. La tarea usa acceso privilegiado del proyecto; las credenciales permanecen en el secret de GitHub.
+El navegador no puede fijar un saldo libremente: solo puede confirmar una compra o una recompensa respaldada por un recibo nuevo y validado, junto con su saldo e inventario correspondientes. Los recibos existentes no se pueden borrar ni reescribir. El catálogo confiable, los perfiles GD verificados y las asignaciones permanecen reservados al verificador. Sus credenciales siguen en el secret de GitHub.
+
+## Qué puede ver cada cuenta
+
+`gameState/JUGADOR`, `runs/JUGADOR`, `preferences/JUGADOR` y `requests/JUGADOR` solo permiten lectura a su UID vinculado mediante `members` y `playerOwners`. Las raíces de asignaciones y cooperativas tampoco admiten lectura desde el navegador. El panel de administrador no permite consultar las cuentas privadas ajenas; su función es gestionar asociaciones y datos públicos.
+
+`publicProfiles` contiene únicamente nombre visible, biografía, cosméticos equipados y preferencia de actividad. Los perfiles, la lista, el ranking y las completaciones siguen siendo públicos. El objetivo público del perfil sigue compartido; los porcentajes de las misiones se guardan por separado en `runs`.
 
 ## Si algo no se activa
 
 - **Cuenta pendiente:** vinculá su UID desde Ajustes o el workflow y volvé a iniciar sesión.
-- **Vista previa / saldo inicial pendiente:** falta ejecutar correctamente el verificador.
+- **Cuenta pendiente / versión anterior:** falta ejecutar correctamente el verificador actualizado.
 - **PERMISSION_DENIED:** revisá las reglas nuevas, el rol y la vinculación recíproca en `members` / `playerOwners`.
+- **Compra rechazada:** publicá las reglas v4 y ejecutá el verificador actualizado para cargar `shopCatalog`; comprobá también el saldo y la conexión.
 - **Consulta antigua:** revisá el último resultado de Actions. No hay que cambiar la contraseña de la página.
 - **Credenciales de otro proyecto:** usá la cuenta de servicio de `gd-cucumberlist`.
 - **No aparecen niveles nuevos:** esperá la próxima consulta del catálogo. Los metadatos de niveles nuevos deben coincidir con el catálogo confiable.

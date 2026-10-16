@@ -26,12 +26,16 @@ Entrega inicial fija: `20 × demons registrados + floor(puntos / 5)`.
 
 Completación nueva: `20 + floor(tier × 2)` monedas, una sola vez por nivel y jugador. El verificador usa el tier del catálogo confiable. Retirar y volver a registrar el mismo nivel no vuelve a pagar. Los puntos del ranking mantienen `tier × 10` y son independientes de estas monedas.
 
-Diario: 50; semanal: 100. Misiones individuales: 25 a 65 según el objetivo. Tienda: títulos, colores e insignias de perfil. Las compras y el equipamiento se procesan mediante solicitudes verificadas.
+Diario: 50; semanal: 100. Misiones individuales: 25 a 65 según el objetivo. Tienda: 30 títulos, 24 colores, 24 insignias, 12 temas y 12 fuentes. Las compras y el equipamiento se confirman en vivo; los cambios de misión o casilla siguen procesándose con el verificador.
 
-Saldo, premios y compras se guardan juntos mediante transacciones condicionales. Cada premio tiene una clave estable. Duplicar una solicitud o volver a iniciar sesión no duplica monedas.
+Las compras y los cobros del navegador se guardan mediante operaciones atómicas validadas por las reglas de Firebase. El verificador conserva las transacciones condicionales con ETag para no sobrescribir operaciones simultáneas. Cada premio tiene una clave estable. Duplicar una solicitud o volver a iniciar sesión no duplica monedas.
 
 Las partidas manuales no se verifican contra una API de récords individuales de GD. La integridad de la economía protege el saldo y la unicidad de los cobros, no demuestra cómo se jugó un nivel.
 
 ## Horarios
 
 America/Montevideo: diario a las 00:00, semanal el lunes y bingo el primer día del mes. La tarea procesa cada cambio en su siguiente ejecución programada, normalmente dentro de 15 minutos. Puede haber demoras de GitHub.
+
+## Privacidad
+
+Cada cuenta solo consulta sus misiones, desafíos, bingo, saldo e inventario. La misión cooperativa se muestra dentro de la cuenta propia y utiliza las completaciones públicas del grupo para comprobar el bonus. Los perfiles y el próximo objetivo público siguen compartidos.

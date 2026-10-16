@@ -13,3 +13,5 @@ Proyecto de fans independiente. Geometry Dash y sus sprites pertenecen a RobTop 
 - Portal, cubo decorativo, paneles, botones, fondo, logo y sonidos Web Audio creados para esta interfaz.
 
 Las licencias del código no se presentan como una cesión de derechos sobre los sprites originales del juego.
+
+- Tipografías de perfil Orbitron, Outfit, Nunito, Rajdhani, Press Start 2P, Bangers, Audiowide, Oxanium, Space Grotesk y Chakra Petch, distribuidas bajo SIL Open Font License 1.1. Los TTF y las licencias individuales se incluyen en `assets/fonts/profiles/`. Fuente: https://github.com/google/fonts/tree/main/ofl
